@@ -6,22 +6,36 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
-            <!-- Compact Header - Everything in One Row -->
+            <!-- Ultra Compact Header - Title, Groups, and Actions in One Row -->
             <div class="card mb-3">
                 <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <!-- Clickable Title and Filter ID -->
-                        <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center flex-wrap gap-3">
+                        <!-- Title and Filter ID -->
+                        <div class="d-flex align-items-center gap-2">
                             <a href="/" class="text-decoration-none text-dark">
-                                <h4 class="mb-0 hover-primary">FERI Timetable</h4>
+                                <h5 class="mb-0 hover-primary">FERI Timetable++</h5>
                             </a>
                             <small class="text-muted">ID: <%= filterId %></small>
                         </div>
                         
-
+                        <!-- Groups Display -->
+                        <div class="d-flex align-items-center gap-2 flex-grow-1">
+                            <small class="text-muted fw-bold d-none d-md-inline">Groups:</small>
+                            <div class="d-flex flex-wrap gap-1" id="selectedGroupsBadges">
+                                <% Object.entries(selectedGroups).forEach(([course, groups]) => { %>
+                                    <% const abbreviatedName = course.split(' ').map(word => word.charAt(0).toUpperCase()).join(''); %>
+                                    <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
+                                        <%= abbreviatedName %> (<%= groups.length %>)
+                                    </span>
+                                <% }); %>
+                            </div>
+                        </div>
                         
-                        <!-- Download Button -->
-                        <div class="d-flex align-items-center">
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#groupsModal" id="editGroupsBtn">
+                                <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText" class="d-none d-sm-inline">Edit</span>
+                            </button>
                             <a href="<%= downloadUrl %>" class="btn btn-sm btn-success" title="Download .ics">
                                 <i class="bi bi-download"></i> <span class="d-none d-md-inline">Download</span>
                             </a>
@@ -30,80 +44,76 @@
                 </div>
             </div>
 
-            <!-- Groups Section (1-row layout) -->
-            <div class="card mb-3">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center gap-3">
-                        <small class="text-muted fw-bold">Groups:</small>
-                        <div class="d-flex flex-wrap gap-1 flex-grow-1" id="selectedGroupsBadges">
-                            <% Object.entries(selectedGroups).forEach(([course, groups]) => { %>
-                                <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
-                                    <%= course %> (<%= groups.length %>)
-                                </span>
-                            <% }); %>
+            <!-- Groups Selection Modal -->
+            <div class="modal fade" id="groupsModal" tabindex="-1" aria-labelledby="groupsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="groupsModalLabel">
+                                <i class="bi bi-pencil me-2"></i>Edit Groups - FERI Timetable++
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#groupsEditor" aria-expanded="false" aria-controls="groupsEditor" id="editGroupsBtn">
-                            <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText">Edit</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Group Editor (Collapsible) -->
-            <div class="collapse mb-3" id="groupsEditor">
-                <div class="card">
-                    <div class="card-body py-2">
-                        <hr class="my-2">
-                        <form id="groupSelectionForm" method="POST" action="/groups/submit">
-                            <input type="hidden" name="filterId" value="<%= filterId %>">
-                            
-                            <div class="row g-3">
-                                <% courses.forEach((course, index) => { %>
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="card h-100">
-                                            <div class="card-body p-3">
-                                                <h6 class="card-title text-primary mb-2"><%= course %></h6>
-                                                <div class="form-group">
-                                                    <% courseGroups[course].sort().forEach((group, groupIndex) => { %>
-                                                        <div class="form-check form-check-sm">
-                                                            <input 
-                                                                class="form-check-input" 
-                                                                type="checkbox" 
-                                                                name="selectedGroups[<%= course %>][]" 
-                                                                value="<%= group %>" 
-                                                                id="edit_group_<%= index %>_<%= groupIndex %>"
-                                                                <% if (selectedGroups[course] && selectedGroups[course].includes(group)) { %>checked<% } %>
-                                                            >
-                                                            <label class="form-check-label small" for="edit_group_<%= index %>_<%= groupIndex %>">
-                                                                <%= group %>
-                                                            </label>
+                        <div class="modal-body">
+                            <form id="groupSelectionForm" method="POST" action="/groups/submit">
+                                <input type="hidden" name="filterId" value="<%= filterId %>">
+                                
+                                <div class="row g-3">
+                                    <% courses.forEach((course, index) => { %>
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100">
+                                                <div class="card-body p-3">
+                                                    <h6 class="card-title text-primary mb-2"><%= course %></h6>
+                                                    <div class="form-group">
+                                                        <div class="row g-1">
+                                                            <% courseGroups[course].sort().forEach((group, groupIndex) => { %>
+                                                                <div class="col-6 col-sm-4">
+                                                                    <div class="form-check form-check-sm">
+                                                                        <input 
+                                                                            class="form-check-input" 
+                                                                            type="checkbox" 
+                                                                            name="selectedGroups[<%= course %>][]" 
+                                                                            value="<%= group %>" 
+                                                                            id="edit_group_<%= index %>_<%= groupIndex %>"
+                                                                            <% if (selectedGroups[course] && selectedGroups[course].includes(group)) { %>checked<% } %>
+                                                                        >
+                                                                        <label class="form-check-label small" for="edit_group_<%= index %>_<%= groupIndex %>">
+                                                                            <%= group %>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            <% }); %>
                                                         </div>
-                                                    <% }); %>
-                                                </div>
-                                                <div class="mt-2">
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-outline-primary btn-sm me-1"
-                                                        onclick="selectAllForCourse('<%= course %>')"
-                                                    >
-                                                        All
-                                                    </button>
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-outline-secondary btn-sm"
-                                                        onclick="deselectAllForCourse('<%= course %>')"
-                                                    >
-                                                        None
-                                                    </button>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <button 
+                                                            type="button" 
+                                                            class="btn btn-outline-primary btn-sm me-1"
+                                                            onclick="selectAllForCourse('<%= course %>')"
+                                                        >
+                                                            All
+                                                        </button>
+                                                        <button 
+                                                            type="button" 
+                                                            class="btn btn-outline-secondary btn-sm"
+                                                            onclick="deselectAllForCourse('<%= course %>')"
+                                                        >
+                                                            None
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                <% }); %>
+                                    <% }); %>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="text-muted small me-auto">
+                                Changes are applied live - no need to save manually
                             </div>
-                            
-
-                        </form>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -157,6 +167,14 @@ function deselectAllForCourse(course) {
     }, 300);
 }
 
+// Function to abbreviate course names (first letter of each word)
+function abbreviateCourseName(courseName) {
+    return courseName
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase())
+        .join('');
+}
+
 function updateSelectedGroupsBadges() {
     const form = document.getElementById('groupSelectionForm');
     const badgesContainer = document.getElementById('selectedGroupsBadges');
@@ -175,12 +193,13 @@ function updateSelectedGroupsBadges() {
         }
     });
     
-    // Create new badges
+    // Create new badges with abbreviated names
     Object.entries(selectedGroups).forEach(([course, groups]) => {
         const badge = document.createElement('span');
         badge.className = 'badge bg-primary';
         badge.title = `${course}: ${groups.join(', ')}`;
-        badge.textContent = `${course} (${groups.length})`;
+        const abbreviatedName = abbreviateCourseName(course);
+        badge.textContent = `${abbreviatedName} (${groups.length})`;
         badgesContainer.appendChild(badge);
     });
     
@@ -366,8 +385,10 @@ document.addEventListener('DOMContentLoaded', function() {
         calendar.getOption('nowIndicator') && calendar.render();
     }, 60000); // Update every minute
     
-    // Add Bootstrap collapse event listeners for better UX
-    const groupsEditor = document.getElementById('groupsEditor');
+
+    
+    // Add Bootstrap modal event listeners for better UX
+    const groupsModal = document.getElementById('groupsModal');
     const editGroupsBtn = document.getElementById('editGroupsBtn');
     let editGroupsIcon = document.getElementById('editGroupsIcon');
     let editGroupsText = document.getElementById('editGroupsText');
@@ -376,8 +397,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.editGroupsIcon = editGroupsIcon;
     window.editGroupsText = editGroupsText;
     
-    if (groupsEditor && editGroupsBtn) {
-        groupsEditor.addEventListener('show.bs.collapse', function() {
+    if (groupsModal && editGroupsBtn) {
+        groupsModal.addEventListener('show.bs.modal', function() {
             // Update button appearance when opening
             editGroupsBtn.classList.remove('btn-outline-primary');
             editGroupsBtn.classList.add('btn-outline-danger');
@@ -392,13 +413,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentText.textContent = 'Close';
             }
             
-            // Scroll the editor into view when opened
-            setTimeout(() => {
-                groupsEditor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 150);
+            // Update button to close modal when clicked
+            editGroupsBtn.setAttribute('data-bs-dismiss', 'modal');
         });
         
-        groupsEditor.addEventListener('hide.bs.collapse', function() {
+
+        
+        groupsModal.addEventListener('hide.bs.modal', function() {
             // Just restore button appearance when closing
             restoreEditButton();
         });
@@ -407,8 +428,13 @@ document.addEventListener('DOMContentLoaded', function() {
         function restoreEditButton() {
             editGroupsBtn.classList.remove('btn-outline-danger');
             editGroupsBtn.classList.add('btn-outline-primary');
-            editGroupsBtn.innerHTML = '<i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText">Edit</span>';
+            editGroupsBtn.innerHTML = '<i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText" class="d-none d-sm-inline">Edit</span>';
             editGroupsBtn.disabled = false;
+            
+            // Remove modal dismiss attribute and restore modal toggle
+            editGroupsBtn.removeAttribute('data-bs-dismiss');
+            editGroupsBtn.setAttribute('data-bs-toggle', 'modal');
+            editGroupsBtn.setAttribute('data-bs-target', '#groupsModal');
             
             // Update global references
             editGroupsIcon = document.getElementById('editGroupsIcon');
@@ -556,6 +582,47 @@ document.addEventListener('DOMContentLoaded', function() {
             transition: color 0.2s ease;
         }
         
+        /* Static transparency modal styling */
+        #groupsModal .modal-content {
+            background-color: rgba(255, 255, 255, 0.65) !important;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+        }
+        
+        #groupsModal .modal-header {
+            background: linear-gradient(135deg, rgba(3, 50, 200, 1), rgba(13, 110, 253, 0.85)) !important;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px 16px 0 0;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        
+        #groupsModal .modal-body {
+            background-color: transparent;
+        }
+        
+        #groupsModal .modal-footer {
+            background-color: rgba(248, 249, 250, 0.9);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 16px 16px;
+        }
+        
+        /* Make content cards fully opaque and normal */
+        #groupsModal .card {
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Keep backdrop but make it less opaque for better calendar visibility */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.2) !important;
+        }
+        
         @media (max-width: 767px) {
             .fc-header-toolbar {
                 flex-direction: column;
@@ -565,6 +632,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .fc-toolbar-chunk {
                 display: flex;
                 justify-content: center;
+            }
+            
+            #groupsModal .modal-dialog {
+                margin: 0.5rem;
+                max-width: none;
+            }
+            
+            #groupsModal .modal-content {
+                background-color: rgba(255, 255, 255, 0.98);
             }
         }
     `;
