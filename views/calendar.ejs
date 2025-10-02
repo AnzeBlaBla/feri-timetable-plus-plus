@@ -190,6 +190,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         firstDay: 1, // Start week on Monday (0 = Sunday, 1 = Monday)
+        timeZone: 'local', // Use local timezone instead of UTC
+        nowIndicator: true, // Show current time indicator
+        //locale: 'sl', // Slovenian locale
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false // 24-hour format
+        },
+        slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false // 24-hour format for time slots
+        },
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -305,6 +318,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     calendar.render();
+    
+    // Update current time indicator every minute
+    setInterval(() => {
+        calendar.getOption('nowIndicator') && calendar.render();
+    }, 60000); // Update every minute
     
     // Add Bootstrap collapse event listeners for better UX
     const groupsEditor = document.getElementById('groupsEditor');
@@ -447,6 +465,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .fc-event {
             font-size: 0.85em;
             padding: 2px;
+            cursor: pointer !important;
+            transition: opacity 0.2s ease;
+        }
+        
+        .fc-event:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .fc-event-title {
@@ -455,10 +481,31 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .fc-daygrid-event {
             white-space: normal;
+            cursor: pointer !important;
+        }
+        
+        .fc-list-event {
+            cursor: pointer !important;
         }
         
         .fc-list-event:hover {
             background-color: rgba(0,0,0,0.05);
+        }
+        
+        /* Enhanced now indicator styling */
+        .fc-timegrid-now-indicator-line {
+            border-color: #dc3545 !important;
+            border-width: 2px !important;
+        }
+        
+        .fc-timegrid-now-indicator-arrow {
+            border-color: #dc3545 !important;
+            border-width: 6px !important;
+        }
+        
+        /* Current time slot highlighting */
+        .fc-timegrid-slot[data-time] {
+            position: relative;
         }
         
         @media (max-width: 767px) {
