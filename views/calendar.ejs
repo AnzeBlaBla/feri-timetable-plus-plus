@@ -6,42 +6,53 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1>Your FERI Timetable</h1>
-                    <p class="text-muted mb-0">Filter ID: <%= filterId %></p>
-                </div>
-                <div class="btn-group" role="group">
-                    <a href="<%= downloadUrl %>" class="btn btn-success">
-                        <i class="bi bi-download"></i> Download .ics
-                    </a>
-                    <a href="/" class="btn btn-outline-secondary">
-                        <i class="bi bi-house"></i> Home
-                    </a>
+            <!-- Compact Header - Everything in One Row -->
+            <div class="card mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <!-- Clickable Title and Filter ID -->
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="/" class="text-decoration-none text-dark">
+                                <h4 class="mb-0 hover-primary">FERI Timetable</h4>
+                            </a>
+                            <small class="text-muted">ID: <%= filterId %></small>
+                        </div>
+                        
+
+                        
+                        <!-- Download Button -->
+                        <div class="d-flex align-items-center">
+                            <a href="<%= downloadUrl %>" class="btn btn-sm btn-success" title="Download .ics">
+                                <i class="bi bi-download"></i> <span class="d-none d-md-inline">Download</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Group Selection (Collapsible) -->
-            <div class="card mb-4">
+            <!-- Groups Section (1-row layout) -->
+            <div class="card mb-3">
                 <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="flex-grow-1">
-                            <small class="text-muted">Selected Groups:</small>
-                            <div class="d-flex flex-wrap gap-1 mt-1" id="selectedGroupsBadges">
-                                <% Object.entries(selectedGroups).forEach(([course, groups]) => { %>
-                                    <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
-                                        <%= course %> (<%= groups.length %>)
-                                    </span>
-                                <% }); %>
-                            </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <small class="text-muted fw-bold">Groups:</small>
+                        <div class="d-flex flex-wrap gap-1 flex-grow-1" id="selectedGroupsBadges">
+                            <% Object.entries(selectedGroups).forEach(([course, groups]) => { %>
+                                <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
+                                    <%= course %> (<%= groups.length %>)
+                                </span>
+                            <% }); %>
                         </div>
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#groupsEditor" aria-expanded="false" aria-controls="groupsEditor" id="editGroupsBtn">
                             <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText">Edit</span>
                         </button>
                     </div>
-                    
-                    <div class="collapse mt-3" id="groupsEditor">
+                </div>
+            </div>
+
+            <!-- Group Editor (Collapsible) -->
+            <div class="collapse mb-3" id="groupsEditor">
+                <div class="card">
+                    <div class="card-body py-2">
                         <hr class="my-2">
                         <form id="groupSelectionForm" method="POST" action="/groups/submit">
                             <input type="hidden" name="filterId" value="<%= filterId %>">
@@ -187,8 +198,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Events data from server
     const events = <%- JSON.stringify(events) %>;
     
+    // Function to get saved view preference
+    function getSavedView() {
+        const savedView = localStorage.getItem('feri-calendar-view');
+        // Default based on screen size if no saved preference
+        if (!savedView) {
+            return window.innerWidth < 768 ? 'listWeek' : 'timeGridWeek';
+        }
+        return savedView;
+    }
+    
+    // Function to save view preference
+    function saveViewPreference(viewName) {
+        localStorage.setItem('feri-calendar-view', viewName);
+    }
+    
     const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
+        initialView: getSavedView(),
         firstDay: 1, // Start week on Monday (0 = Sunday, 1 = Monday)
         timeZone: 'local', // Use local timezone instead of UTC
         nowIndicator: true, // Show current time indicator
@@ -302,22 +328,38 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         
+        // Save view preference when user changes view
+        datesSet: function(info) {
+            // Only save if this is a user-initiated change, not initial load
+            if (calendar.isInitialized) {
+                saveViewPreference(info.view.type);
+                console.log('Saved view preference:', info.view.type);
+            }
+        },
+        
         // Responsive settings
         windowResize: function() {
-            if (window.innerWidth < 768) {
-                calendar.changeView('listWeek');
-            } else {
-                calendar.changeView('timeGridWeek');
+            // Only auto-change view if user hasn't set a preference
+            const savedView = localStorage.getItem('feri-calendar-view');
+            if (!savedView) {
+                if (window.innerWidth < 768) {
+                    calendar.changeView('listWeek');
+                } else {
+                    calendar.changeView('timeGridWeek');
+                }
             }
         }
     });
     
-    // Set initial view based on screen size
-    if (window.innerWidth < 768) {
-        calendar.setOption('initialView', 'listWeek');
-    }
+    // Initial view is already set from getSavedView(), no need to override
     
     calendar.render();
+    
+    // Mark calendar as initialized after initial render to avoid saving initial view
+    setTimeout(() => {
+        calendar.isInitialized = true;
+        console.log('Calendar initialized, will now save view changes');
+    }, 100);
     
     // Update current time indicator every minute
     setInterval(() => {
@@ -506,6 +548,12 @@ document.addEventListener('DOMContentLoaded', function() {
         /* Current time slot highlighting */
         .fc-timegrid-slot[data-time] {
             position: relative;
+        }
+        
+        /* Clickable title hover effect */
+        .hover-primary:hover {
+            color: #0d6efd !important;
+            transition: color 0.2s ease;
         }
         
         @media (max-width: 767px) {
