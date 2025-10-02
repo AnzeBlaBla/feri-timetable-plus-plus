@@ -1,0 +1,108 @@
+<%- include("partials/header") %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">FERI Timetable++</h1>
+                    <p class="text-muted text-center mb-4">Enter your FERI timetable URL to get started</p>
+                    
+                    <form id="urlForm">
+                        <div class="mb-3">
+                            <label for="urlInput" class="form-label">Timetable URL</label>
+                            <input 
+                                type="url" 
+                                class="form-control" 
+                                id="urlInput" 
+                                placeholder="https://www.wise-tt.com/wtt_um_feri/index.jsp?filterId=...;"
+                                required
+                            >
+                            <div class="form-text">
+                                Paste your FERI timetable URL from wise-tt.com
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Extract Filter ID</button>
+                    </form>
+
+                    <div id="result" class="mt-3" style="display: none;">
+                        <div class="alert alert-success" role="alert">
+                            <strong>Filter ID:</strong> <span id="filterId"></span>
+                        </div>
+                    </div>
+
+                    <div id="error" class="mt-3" style="display: none;">
+                        <div class="alert alert-danger" role="alert">
+                            <span id="errorMessage"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('urlForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const urlInput = document.getElementById('urlInput').value;
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const filterIdSpan = document.getElementById('filterId');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Hide previous results
+    resultDiv.style.display = 'none';
+    errorDiv.style.display = 'none';
+    
+    try {
+        // Parse the URL
+        const url = new URL(urlInput);
+        
+        // Validate the URL structure
+        if (!url.hostname.includes('wise-tt.com')) {
+            throw new Error('URL must be from wise-tt.com domain');
+        }
+        
+        if (!url.pathname.includes('wtt_um_feri')) {
+            throw new Error('URL must contain "wtt_um_feri" in the path');
+        }
+        
+        // Extract filterId parameter
+        const filterId = url.searchParams.get('filterId');
+        
+        if (!filterId) {
+            throw new Error('filterId parameter not found in URL');
+        }
+        
+        if (filterId.trim() === '') {
+            throw new Error('filterId parameter is empty');
+        }
+        
+        // Success - show the filter ID
+        filterIdSpan.textContent = filterId;
+        resultDiv.style.display = 'block';
+        
+        // Redirect to groups page
+        setTimeout(() => {
+            window.location.href = `/groups/${encodeURIComponent(filterId)}`;
+        }, 1000);
+        
+    } catch (error) {
+        // Show error message
+        errorMessage.textContent = error.message;
+        errorDiv.style.display = 'block';
+    }
+});
+
+// Auto-fill example URL for testing
+document.addEventListener('DOMContentLoaded', function() {
+    const urlInput = document.getElementById('urlInput');
+    if (urlInput.value === '') {
+        urlInput.value = 'https://www.wise-tt.com/wtt_um_feri/index.jsp?filterId=0;86,568;0;0;';
+    }
+});
+</script>
+
+<%- include("partials/footer") %>

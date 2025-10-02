@@ -1,0 +1,480 @@
+<%- include("partials/header") %>
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Your FERI Timetable</h1>
+                    <p class="text-muted mb-0">Filter ID: <%= filterId %></p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="<%= downloadUrl %>" class="btn btn-success">
+                        <i class="bi bi-download"></i> Download .ics
+                    </a>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="bi bi-house"></i> Home
+                    </a>
+                </div>
+            </div>
+
+            <!-- Group Selection (Collapsible) -->
+            <div class="card mb-4">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                            <small class="text-muted">Selected Groups:</small>
+                            <div class="d-flex flex-wrap gap-1 mt-1" id="selectedGroupsBadges">
+                                <% Object.entries(selectedGroups).forEach(([course, groups]) => { %>
+                                    <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
+                                        <%= course %> (<%= groups.length %>)
+                                    </span>
+                                <% }); %>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#groupsEditor" aria-expanded="false" aria-controls="groupsEditor" id="editGroupsBtn">
+                            <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText">Edit</span>
+                        </button>
+                    </div>
+                    
+                    <div class="collapse mt-3" id="groupsEditor">
+                        <hr class="my-2">
+                        <form id="groupSelectionForm" method="POST" action="/groups/submit">
+                            <input type="hidden" name="filterId" value="<%= filterId %>">
+                            
+                            <div class="row g-3">
+                                <% courses.forEach((course, index) => { %>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card h-100">
+                                            <div class="card-body p-3">
+                                                <h6 class="card-title text-primary mb-2"><%= course %></h6>
+                                                <div class="form-group">
+                                                    <% courseGroups[course].sort().forEach((group, groupIndex) => { %>
+                                                        <div class="form-check form-check-sm">
+                                                            <input 
+                                                                class="form-check-input" 
+                                                                type="checkbox" 
+                                                                name="selectedGroups[<%= course %>][]" 
+                                                                value="<%= group %>" 
+                                                                id="edit_group_<%= index %>_<%= groupIndex %>"
+                                                                <% if (selectedGroups[course] && selectedGroups[course].includes(group)) { %>checked<% } %>
+                                                            >
+                                                            <label class="form-check-label small" for="edit_group_<%= index %>_<%= groupIndex %>">
+                                                                <%= group %>
+                                                            </label>
+                                                        </div>
+                                                    <% }); %>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn btn-outline-primary btn-sm me-1"
+                                                        onclick="selectAllForCourse('<%= course %>')"
+                                                    >
+                                                        All
+                                                    </button>
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn btn-outline-secondary btn-sm"
+                                                        onclick="deselectAllForCourse('<%= course %>')"
+                                                    >
+                                                        None
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                            
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+<script>
+// Helper functions for group selection
+function selectAllForCourse(course) {
+    const checkboxes = document.querySelectorAll(`input[name="selectedGroups[${course}][]"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedGroupsBadges();
+    
+    // Trigger live calendar update
+    clearTimeout(window.updateTimeout);
+    window.updateTimeout = setTimeout(() => {
+        const form = document.getElementById('groupSelectionForm');
+        if (form && window.updateCalendarLive) {
+            window.updateCalendarLive();
+        }
+    }, 300);
+}
+
+function deselectAllForCourse(course) {
+    const checkboxes = document.querySelectorAll(`input[name="selectedGroups[${course}][]"]`);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedGroupsBadges();
+    
+    // Trigger live calendar update
+    clearTimeout(window.updateTimeout);
+    window.updateTimeout = setTimeout(() => {
+        const form = document.getElementById('groupSelectionForm');
+        if (form && window.updateCalendarLive) {
+            window.updateCalendarLive();
+        }
+    }, 300);
+}
+
+function updateSelectedGroupsBadges() {
+    const form = document.getElementById('groupSelectionForm');
+    const badgesContainer = document.getElementById('selectedGroupsBadges');
+    
+    // Clear current badges
+    badgesContainer.innerHTML = '';
+    
+    // Get all selected groups
+    const courses = <%- JSON.stringify(courses) %>;
+    const selectedGroups = {};
+    
+    courses.forEach(course => {
+        const checkboxes = form.querySelectorAll(`input[name="selectedGroups[${course}][]"]:checked`);
+        if (checkboxes.length > 0) {
+            selectedGroups[course] = Array.from(checkboxes).map(cb => cb.value);
+        }
+    });
+    
+    // Create new badges
+    Object.entries(selectedGroups).forEach(([course, groups]) => {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary';
+        badge.title = `${course}: ${groups.join(', ')}`;
+        badge.textContent = `${course} (${groups.length})`;
+        badgesContainer.appendChild(badge);
+    });
+    
+    if (Object.keys(selectedGroups).length === 0) {
+        const noBadge = document.createElement('span');
+        noBadge.className = 'badge bg-secondary';
+        noBadge.textContent = 'No groups selected';
+        badgesContainer.appendChild(noBadge);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    
+    // Events data from server
+    const events = <%- JSON.stringify(events) %>;
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        firstDay: 1, // Start week on Monday (0 = Sunday, 1 = Monday)
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        views: {
+            timeGridWeek: {
+                slotMinTime: '07:00:00',
+                slotMaxTime: '21:00:00'
+            },
+            timeGridDay: {
+                slotMinTime: '07:00:00',
+                slotMaxTime: '21:00:00'
+            }
+        },
+        businessHours: {
+            daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+            startTime: '08:00',
+            endTime: '20:00'
+        },
+        weekends: true,
+        events: events,
+        eventDisplay: 'block',
+        displayEventTime: true,
+        height: 'auto',
+        
+        // Event click handler
+        eventClick: function(info) {
+            const event = info.event;
+            const props = event.extendedProps;
+            
+            // Create modal content
+            const modalContent = `
+                <div class="modal fade" id="eventModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background-color: ${event.backgroundColor}; color: white;">
+                                <h5 class="modal-title">${event.title}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Course:</strong></div>
+                                    <div class="col-sm-8">${props.course}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Type:</strong></div>
+                                    <div class="col-sm-8">${props.type}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Group:</strong></div>
+                                    <div class="col-sm-8">${props.group}</div>
+                                </div>
+                                ${props.persons ? `
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Instructors:</strong></div>
+                                    <div class="col-sm-8">${props.persons}</div>
+                                </div>
+                                ` : ''}
+                                ${props.location ? `
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Location:</strong></div>
+                                    <div class="col-sm-8">${props.location}</div>
+                                </div>
+                                ` : ''}
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Time:</strong></div>
+                                    <div class="col-sm-8">
+                                        ${event.start.toLocaleString()} - ${event.end.toLocaleString()}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('eventModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            modal.show();
+            
+            // Clean up modal after it's hidden
+            document.getElementById('eventModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        },
+        
+        // Responsive settings
+        windowResize: function() {
+            if (window.innerWidth < 768) {
+                calendar.changeView('listWeek');
+            } else {
+                calendar.changeView('timeGridWeek');
+            }
+        }
+    });
+    
+    // Set initial view based on screen size
+    if (window.innerWidth < 768) {
+        calendar.setOption('initialView', 'listWeek');
+    }
+    
+    calendar.render();
+    
+    // Add Bootstrap collapse event listeners for better UX
+    const groupsEditor = document.getElementById('groupsEditor');
+    const editGroupsBtn = document.getElementById('editGroupsBtn');
+    let editGroupsIcon = document.getElementById('editGroupsIcon');
+    let editGroupsText = document.getElementById('editGroupsText');
+    
+    // Store references globally for restoreEditButton function
+    window.editGroupsIcon = editGroupsIcon;
+    window.editGroupsText = editGroupsText;
+    
+    if (groupsEditor && editGroupsBtn) {
+        groupsEditor.addEventListener('show.bs.collapse', function() {
+            // Update button appearance when opening
+            editGroupsBtn.classList.remove('btn-outline-primary');
+            editGroupsBtn.classList.add('btn-outline-danger');
+            
+            // Get fresh references to the icon and text elements
+            const currentIcon = document.getElementById('editGroupsIcon');
+            const currentText = document.getElementById('editGroupsText');
+            
+            if (currentIcon && currentText) {
+                currentIcon.classList.remove('bi-pencil');
+                currentIcon.classList.add('bi-x');
+                currentText.textContent = 'Close';
+            }
+            
+            // Scroll the editor into view when opened
+            setTimeout(() => {
+                groupsEditor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
+        });
+        
+        groupsEditor.addEventListener('hide.bs.collapse', function() {
+            // Just restore button appearance when closing
+            restoreEditButton();
+        });
+                    
+        
+        function restoreEditButton() {
+            editGroupsBtn.classList.remove('btn-outline-danger');
+            editGroupsBtn.classList.add('btn-outline-primary');
+            editGroupsBtn.innerHTML = '<i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText">Edit</span>';
+            editGroupsBtn.disabled = false;
+            
+            // Update global references
+            editGroupsIcon = document.getElementById('editGroupsIcon');
+            editGroupsText = document.getElementById('editGroupsText');
+            window.editGroupsIcon = editGroupsIcon;
+            window.editGroupsText = editGroupsText;
+        }
+        
+        // Make restoreEditButton globally available
+        window.restoreEditButton = restoreEditButton;
+    }
+    
+    // Add event listeners for group selection form
+    const form = document.getElementById('groupSelectionForm');
+    if (form) {
+        // Add change listeners to all checkboxes for live updates
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Update badges immediately
+                updateSelectedGroupsBadges();
+                
+                // Debounce the calendar update to avoid too many requests
+                clearTimeout(window.updateTimeout);
+                window.updateTimeout = setTimeout(() => {
+                    updateCalendarLive();
+                }, 300); // 300ms debounce
+            });
+        });
+        
+        // Function to update calendar with current form state
+        window.updateCalendarLive = function() {
+            console.log('updateCalendarLive called');
+            const formData = new FormData(form);
+            const jsonData = {
+                filterId: formData.get('filterId'),
+                selectedGroups: {}
+            };
+            console.log('Form filterId:', jsonData.filterId);
+            
+            // Convert FormData to proper selectedGroups object
+            for (const [key, value] of formData.entries()) {
+                if (key.startsWith('selectedGroups[') && key.endsWith('][]')) {
+                    const courseMatch = key.match(/selectedGroups\[(.+?)\]\[\]/);
+                    if (courseMatch) {
+                        const course = courseMatch[1];
+                        if (!jsonData.selectedGroups[course]) {
+                            jsonData.selectedGroups[course] = [];
+                        }
+                        jsonData.selectedGroups[course].push(value);
+                    }
+                }
+            }
+            console.log('Processed selectedGroups:', jsonData.selectedGroups);
+            
+            // Get the filter ID
+            const filterId = jsonData.filterId;
+            
+            // Create query params for selected groups
+            const queryParams = new URLSearchParams();
+            Object.entries(jsonData.selectedGroups).forEach(([course, groups]) => {
+                groups.forEach(group => {
+                    queryParams.append(`selectedGroups[${course}][]`, group);
+                });
+            });
+            
+            // Fetch updated calendar data
+            console.log('Fetching calendar data with query:', queryParams.toString());
+            fetch(`/api/calendar/${filterId}?${queryParams.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Received calendar data:', data);
+                // Update calendar events
+                calendar.removeAllEventSources();
+                calendar.addEventSource(data.events);
+                calendar.refetchEvents();
+            })
+            .catch(error => {
+                console.error('Error refreshing calendar:', error);
+                console.error('Failed query params:', queryParams.toString());
+            });
+        }
+        
+        // Make calendar available globally for updates
+        window.calendar = calendar;
+        
+        // Prevent default form submission since we handle it with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+    }
+    
+    // Add some custom styling
+    const style = document.createElement('style');
+    style.textContent = `
+        .fc-event {
+            font-size: 0.85em;
+            padding: 2px;
+        }
+        
+        .fc-event-title {
+            font-weight: 600;
+        }
+        
+        .fc-daygrid-event {
+            white-space: normal;
+        }
+        
+        .fc-list-event:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        @media (max-width: 767px) {
+            .fc-header-toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .fc-toolbar-chunk {
+                display: flex;
+                justify-content: center;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+
+<%- include("partials/footer") %>
