@@ -1,5 +1,11 @@
 dev_test
 node_modules
-.env
+.env*
 
 *.apib
+
+# Next.js
+.next
+out
+*.tsbuildinfo
+next-env.d.ts

@@ -15,12 +15,34 @@ git clone https://github.com/anzeblabla/feri-timetable-plus-plus.git
 cd feri-timetable-plus-plus
 ```
 
-## Development
+Install dependencies:
 
 ```bash
 npm install
+```
+
+## Configuration
+
+Copy the example environment file and add your credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and add your WISE Timetable API credentials:
+
+```env
+WTT_USERNAME=your_username_here
+WTT_PASSWORD=your_password_here
+```
+
+## Development
+
+```bash
 npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 
 

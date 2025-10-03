@@ -2,32 +2,27 @@
   "name": "feri-timetable-plus-plus",
   "version": "1.0.0",
   "description": "A better FERI UM timetable.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
-    "dev": "nodemon --watch src -e ts --exec ts-node src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "author": "AnzeBlaBla",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "ejs": "^3.1.10",
-    "express": "^5.1.0",
+    "bootstrap": "^5.3.8",
     "ical.js": "^2.2.1",
     "jsdom": "^27.0.0",
-    "node-fetch": "^3.3.2"
+    "next": "^15.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/ejs": "^3.1.5",
-    "@types/express": "^5.0.3",
     "@types/jsdom": "^27.0.0",
-    "@types/node": "^24.6.2",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
+    "@types/node": "^20.16.17",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "typescript": "^5.9.3"
   }
 }
