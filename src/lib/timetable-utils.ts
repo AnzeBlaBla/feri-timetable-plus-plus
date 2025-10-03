@@ -205,14 +205,10 @@ export function convertLecturesToEvents(lectures: LectureWise[]): CalendarEvent[
     const backgroundColor = stringToColor(lecture.course);
     const textColor = needsLightText(backgroundColor) ? '#ffffff' : '#000000';
     
-    // Build title with optional type and location
-    let title = lecture.executionType 
+    // Build title without location (location will be shown as subtitle)
+    const title = lecture.executionType 
       ? `${lecture.course} (${lecture.executionType})`
       : lecture.course;
-    
-    if (roomNames) {
-      title += ` - ${roomNames}`;
-    }
     
     // Create unique ID by combining lecture ID with group and room info
     // This ensures that different groups/rooms at the same time get different IDs

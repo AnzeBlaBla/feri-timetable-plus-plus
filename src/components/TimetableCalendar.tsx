@@ -199,6 +199,20 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
     }
   };
 
+  const renderEventContent = (eventInfo: any) => {
+    const location = eventInfo.event.extendedProps.location;
+    
+    return (
+      <div className="fc-event-main-frame">
+        <div className="fc-event-time">{eventInfo.timeText}</div>
+        <div className="fc-event-title-container">
+          <div className="fc-event-title">{eventInfo.event.title}</div>
+          {location && <div className="fc-event-location">{location}</div>}
+        </div>
+      </div>
+    );
+  };
+
   const handleEventDidMount = (info: any) => {
     // Count how many events are actually rendered
     renderCountRef.current++;
@@ -270,6 +284,7 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
       events={events}
       eventDisplay="block"
       displayEventTime={true}
+      eventContent={renderEventContent}
       height="auto"
       eventClick={handleEventClick}
       eventDidMount={handleEventDidMount}
