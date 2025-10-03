@@ -1,6 +1,7 @@
 dev_test
 node_modules
-.env*
+.env
+.env.local
 
 *.apib
 
