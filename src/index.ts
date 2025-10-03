@@ -199,22 +199,30 @@ function filterLecturesByGroups(lectures: any[], selectedGroups: Record<string, 
 
 // Helper function to convert lectures to calendar events
 function lecturesToEvents(lectures: any[]) {
-  return lectures.map(lecture => ({
-    title: `${lecture.course}`,
-    start: lecture.start_time,
-    end: lecture.end_time,
-    backgroundColor: getColorForSubject(lecture.course),
-    borderColor: getColorForSubject(lecture.course),
-    textColor: '#ffffff',
-    extendedProps: {
-      course: lecture.course,
-      type: lecture.executionType || 'Lecture',
-      group: lecture.groups ? lecture.groups.map((g: any) => g.name).join(', ') : 'N/A',
-      persons: lecture.lecturers ? lecture.lecturers.map((l: any) => l.name).join(', ') : null,
-      location: lecture.rooms ? lecture.rooms.map((r: any) => r.name).join(', ') : null,
-      rawLecture: lecture
+  return lectures.map(lecture => {
+    // Build title with executionType in brackets if available
+    let title = lecture.course;
+    if (lecture.executionType && lecture.executionType.trim() !== '') {
+      title = `${lecture.course} (${lecture.executionType})`;
     }
-  }));
+    
+    return {
+      title,
+      start: lecture.start_time,
+      end: lecture.end_time,
+      backgroundColor: getColorForSubject(lecture.course),
+      borderColor: getColorForSubject(lecture.course),
+      textColor: '#ffffff',
+      extendedProps: {
+        course: lecture.course,
+        type: lecture.executionType || 'Lecture',
+        group: lecture.groups ? lecture.groups.map((g: any) => g.name).join(', ') : 'N/A',
+        persons: lecture.lecturers ? lecture.lecturers.map((l: any) => l.name).join(', ') : null,
+        location: lecture.rooms ? lecture.rooms.map((r: any) => r.name).join(', ') : null,
+        rawLecture: lecture
+      }
+    };
+  });
 }
 
 // Helper function to generate ICS (iCalendar) content

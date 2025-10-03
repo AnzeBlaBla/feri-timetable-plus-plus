@@ -8,72 +8,92 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
-            <!-- Ultra Compact Header - Title, Groups, and Actions in One Row -->
+            <!-- Timetable Header -->
             <div class="card mb-3">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center flex-wrap gap-3">
-                        <!-- Title -->
-                        <div class="d-flex align-items-center gap-2">
-                            <div>
-                                <a href="/" class="text-decoration-none text-dark">
-                                    <h5 class="mb-0 hover-primary">FERI Timetable++</h5>
-                                </a>
-                                <small class="text-muted">
-                                    <%= programme %> - Year <%= year %>
-                                    <% if (branches.length > 0) { %>
-                                        - <%= branches.join(', ') %>
+                <div class="card-body py-3">
+                    <!-- Top Row: Title and Filter Controls -->
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-3">
+                            <a href="/" class="text-decoration-none text-dark">
+                                <h5 class="mb-0 hover-primary">FERI Timetable++</h5>
+                            </a>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="d-flex align-items-center gap-2 justify-content-md-end flex-wrap">
+                                <!-- Programme Selector -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <small class="text-muted">Programme:</small>
+                                    <select class="form-select form-select-sm" id="programmeSelect" style="min-width: 200px;">
+                                        <option value="">Loading...</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Year Selector -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <small class="text-muted">Year:</small>
+                                    <div id="yearSelection" class="d-flex gap-1">
+                                        <small class="text-muted">Select programme first</small>
+                                    </div>
+                                </div>
+                                
+
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Row: Groups and Actions -->
+                    <div class="row align-items-center">
+                        <!-- Left: Groups Display -->
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted fw-bold">Groups:</small>
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#groupsModal" id="editGroupsBtn">
+                                    <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText" class="d-none d-sm-inline">Edit</span>
+                                </button>
+                                <div class="d-flex flex-wrap gap-1" id="selectedGroupsBadges">
+                                    <% 
+                                    const hasSelectedGroups = Object.values(selectedGroups).some(groups => groups.length > 0);
+                                    if (hasSelectedGroups) {
+                                        Object.entries(selectedGroups).forEach(([course, groups]) => { 
+                                            if (groups.length > 0) {
+                                                const abbreviatedName = course.split(' ').map(word => word.charAt(0).toUpperCase()).join(''); 
+                                    %>
+                                                <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
+                                                    <%= abbreviatedName %> (<%= groups.length %>)
+                                                </span>
+                                    <%      }
+                                        });
+                                    } else { %>
+                                        <span class="badge bg-secondary">No groups selected</span>
                                     <% } %>
-                                </small>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Groups Display -->
-                        <div class="d-flex align-items-center gap-2 flex-grow-1">
-                            <small class="text-muted fw-bold d-none d-md-inline">Groups:</small>
-                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#groupsModal" id="editGroupsBtn">
-                                <i class="bi bi-pencil" id="editGroupsIcon"></i> <span id="editGroupsText" class="d-none d-sm-inline">Edit</span>
-                            </button>
-                            <div class="d-flex flex-wrap gap-1" id="selectedGroupsBadges">
-                                <% 
-                                const hasSelectedGroups = Object.values(selectedGroups).some(groups => groups.length > 0);
-                                if (hasSelectedGroups) {
-                                    Object.entries(selectedGroups).forEach(([course, groups]) => { 
-                                        if (groups.length > 0) {
-                                            const abbreviatedName = course.split(' ').map(word => word.charAt(0).toUpperCase()).join(''); 
-                                %>
-                                            <span class="badge bg-primary" title="<%= course %>: <%= groups.join(', ') %>">
-                                                <%= abbreviatedName %> (<%= groups.length %>)
-                                            </span>
-                                <%      }
-                                    });
-                                } else { %>
-                                    <span class="badge bg-secondary">No groups selected</span>
-                                <% } %>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="d-flex align-items-center gap-2 position-relative">
-                            <button class="btn btn-sm btn-outline-info" type="button" id="shareBtn" title="Share current selection">
-                                <i class="bi bi-share" id="shareIcon"></i> <span class="d-none d-sm-inline">Share</span>
-                            </button>
-                            <!-- Share Tooltip -->
-                            <div class="position-absolute top-100 end-0 mt-2" id="shareTooltip" style="display: none; z-index: 1050; min-width: 300px;">
-                                <div class="card shadow-lg">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <small class="text-muted fw-bold">Share:</small>
-                                            <input type="text" class="form-control form-control-sm" id="shareUrlInput" readonly>
-                                            <button class="btn btn-sm btn-outline-success" id="copyUrlBtn" title="Copy to clipboard">
-                                                <i class="bi bi-copy"></i>
-                                            </button>
+                        <!-- Right: Action Buttons -->
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center gap-2 justify-content-md-end position-relative">
+                                <button class="btn btn-sm btn-outline-info" type="button" id="shareBtn" title="Share current selection">
+                                    <i class="bi bi-share" id="shareIcon"></i> <span class="d-none d-sm-inline">Share</span>
+                                </button>
+                                <!-- Share Tooltip -->
+                                <div class="position-absolute top-100 end-0 mt-2" id="shareTooltip" style="display: none; z-index: 1050; min-width: 300px;">
+                                    <div class="card shadow-lg">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small class="text-muted fw-bold">Share:</small>
+                                                <input type="text" class="form-control form-control-sm" id="shareUrlInput" readonly>
+                                                <button class="btn btn-sm btn-outline-success" id="copyUrlBtn" title="Copy to clipboard">
+                                                    <i class="bi bi-copy"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                                <button class="btn btn-sm btn-success" id="downloadIcsBtn" title="Download .ics calendar file">
+                                    <i class="bi bi-download"></i> <span class="d-none d-md-inline">.ics</span>
+                                </button>
                             </div>
-                            <button class="btn btn-sm btn-success" id="downloadIcsBtn" title="Download .ics calendar file">
-                                <i class="bi bi-download"></i> <span class="d-none d-md-inline">.ics</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -234,6 +254,27 @@ function abbreviateCourseName(courseName) {
         .join('');
 }
 
+// Function to select all groups by default (only if no groups query param is present)
+function selectAllGroups() {
+    const form = document.getElementById('groupSelectionForm');
+    if (!form) return;
+    
+    // Check if 'groups' query parameter exists in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasGroupsParam = urlParams.has('groups');
+    
+    // Only auto-select all if no 'groups' query parameter is present
+    if (!hasGroupsParam) {
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        console.log('No groups query param found - selected all groups by default:', checkboxes.length, 'groups');
+    } else {
+        console.log('Groups query param present - respecting existing selection (including empty)');
+    }
+}
+
 function updateSelectedGroupsBadges() {
     const form = document.getElementById('groupSelectionForm');
     const badgesContainer = document.getElementById('selectedGroupsBadges');
@@ -241,11 +282,21 @@ function updateSelectedGroupsBadges() {
     // Clear current badges
     badgesContainer.innerHTML = '';
     
-    // Get all selected groups
-    const courses = <%- JSON.stringify(courses) %>;
+    // Get all selected groups from the modal form (which has the latest course data)
     const selectedGroups = {};
     
-    courses.forEach(course => {
+    // Get all unique course names from the current checkboxes in the modal
+    const allCheckboxes = form.querySelectorAll('input[type="checkbox"]');
+    const courseNames = new Set();
+    allCheckboxes.forEach(checkbox => {
+        const match = checkbox.name.match(/selectedGroups\[(.+?)\]\[\]/);
+        if (match) {
+            courseNames.add(match[1]);
+        }
+    });
+    
+    // Process each course found in the form
+    Array.from(courseNames).forEach(course => {
         const checkboxes = form.querySelectorAll(`input[name="selectedGroups[${course}][]"]:checked`);
         if (checkboxes.length > 0) {
             selectedGroups[course] = Array.from(checkboxes).map(cb => cb.value);
@@ -913,8 +964,432 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
         });
         
+                // Select all groups by default on page load
+        selectAllGroups();
+        
         // Initialize badges on page load
         updateSelectedGroupsBadges();
+    }
+    
+    // Dynamic filter controls functionality
+    let programmes = [];
+    let currentProgramme = <%- JSON.stringify(programmeId) %>;
+    let currentYear = '<%= year %>';
+    let isInitializing = true; // Flag to prevent auto-reloads during page setup
+    
+    const programmeSelect = document.getElementById('programmeSelect');
+    const yearSelection = document.getElementById('yearSelection');
+    
+
+    
+    // Load programmes on page load
+    loadProgrammes();
+    
+    // Load programmes from API
+    async function loadProgrammes() {
+        try {
+            const response = await fetch('/api/programmes');
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load programmes');
+            }
+            
+            programmes = data.programmes;
+            populateProgrammeSelect();
+            
+            // If we have current programme, set up the years
+            if (currentProgramme) {
+                populateYearButtons();
+                if (currentYear) {
+                    // For initial load, select the year
+                    selectYear(currentYear);
+                }
+            }
+            
+            // Mark initialization as complete
+            setTimeout(() => {
+                isInitializing = false;
+                console.log('Dynamic controls initialized - user interactions will now trigger updates');
+            }, 500);
+            
+        } catch (error) {
+            console.error('Error loading programmes:', error);
+            programmeSelect.innerHTML = '<option value="">Error loading programmes</option>';
+            isInitializing = false;
+        }
+    }
+    
+    // Populate programme select dropdown
+    function populateProgrammeSelect() {
+        programmeSelect.innerHTML = '<option value="">Select a programme...</option>';
+        
+        programmes.forEach(programme => {
+            const option = document.createElement('option');
+            option.value = programme.id;
+            const yearText = programme.year === '1' ? '1 year' : `${programme.year} years`;
+            option.textContent = `${programme.name} (${yearText})`;
+            option.dataset.year = programme.year;
+            option.dataset.name = programme.name;
+            
+            if (programme.id === currentProgramme) {
+                option.selected = true;
+            }
+            
+            programmeSelect.appendChild(option);
+        });
+    }
+    
+    // Handle programme selection
+    programmeSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (selectedOption.value) {
+            const selectedProgramme = {
+                id: selectedOption.value,
+                name: selectedOption.dataset.name,
+                year: selectedOption.dataset.year
+            };
+            
+            currentProgramme = selectedProgramme.id;
+            currentYear = null; // Will be set to '1' in populateYearButtons
+            
+            // Populate years (will auto-select year 1)
+            populateYearButtons();
+            
+            // Update URL live if not initializing
+            if (!isInitializing) {
+                updateDynamicURL();
+                // Update timetable with new programme and default year (1)
+                setTimeout(() => {
+                    updateTimetableFromControls();
+                }, 100);
+            }
+            
+        } else {
+            currentProgramme = null;
+            currentYear = null;
+            yearSelection.innerHTML = '<small class="text-muted">Select programme first</small>';
+        }
+    });
+    
+    // Populate year buttons based on selected programme
+    function populateYearButtons() {
+        if (!currentProgramme) return;
+        
+        const programme = programmes.find(p => p.id === currentProgramme);
+        if (!programme) return;
+        
+        // The year field represents total years in the programme
+        const totalYears = parseInt(programme.year);
+        
+        // Clear existing buttons
+        yearSelection.innerHTML = '';
+        
+        // If no year is selected, default to year 1
+        if (!currentYear) {
+            currentYear = '1';
+        }
+        
+        // Create buttons for each year from 1 to totalYears
+        for (let year = 1; year <= totalYears; year++) {
+            const button = document.createElement('button');
+            button.className = 'btn btn-sm btn-outline-primary year-button';
+            button.type = 'button';
+            button.textContent = year.toString();
+            button.dataset.year = year.toString();
+            
+            if (year.toString() === currentYear) {
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-primary');
+            }
+            
+            // Add click handler
+            button.addEventListener('click', function() {
+                selectYear(year.toString());
+            });
+            
+            yearSelection.appendChild(button);
+        }
+        
+
+    }
+    
+    // Handle year selection
+    function selectYear(year) {
+        currentYear = year;
+        
+        // Update button visual states
+        document.querySelectorAll('.year-button').forEach(button => {
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-primary');
+            if (button.dataset.year === year) {
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-primary');
+            }
+        });
+        
+        // Update URL live if not initializing
+        if (!isInitializing) {
+            updateDynamicURL();
+            // Update timetable with new year
+            updateTimetableFromControls();
+        }
+    }
+    
+
+    
+
+    
+
+    
+    // Function to update URL dynamically based on current selections
+    function updateDynamicURL() {
+        if (!currentProgramme || !currentYear) return;
+        
+        try {
+            // Build new URL (always use all branches)
+            const newUrl = `/timetable?programme=${currentProgramme}&year=${currentYear}&branches=all`;
+            
+            // Update URL in browser without reload
+            window.history.pushState({
+                programme: currentProgramme,
+                year: currentYear,
+                branches: 'all'
+            }, document.title, newUrl);
+            
+            console.log('URL updated dynamically:', newUrl);
+            
+        } catch (error) {
+            console.error('Error updating URL dynamically:', error);
+        }
+    }
+    
+    // Function to dynamically update the groups modal with new course data
+    async function updateGroupsModal(newCourses, newCourseGroups) {
+        try {
+            console.log('Updating groups modal with new courses:', newCourses.length);
+            
+            // Get the modal body where courses are displayed
+            const modalBody = document.querySelector('#groupsModal .modal-body .row');
+            if (!modalBody) {
+                console.error('Groups modal body not found');
+                return;
+            }
+            
+            // Clear existing course cards
+            modalBody.innerHTML = '';
+            
+            // Rebuild course cards with new data
+            newCourses.forEach((course, index) => {
+                const courseGroups = newCourseGroups[course] || [];
+                
+                const courseCard = document.createElement('div');
+                courseCard.className = 'col-md-6 col-lg-4';
+                
+                courseCard.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body p-3">
+                            <h6 class="card-title text-primary mb-2">${course}</h6>
+                            <div class="form-group">
+                                <div class="row g-1">
+                                    ${courseGroups.map((group, groupIndex) => `
+                                        <div class="col-6 col-sm-4">
+                                            <div class="form-check form-check-sm">
+                                                <input 
+                                                    class="form-check-input" 
+                                                    type="checkbox" 
+                                                    name="selectedGroups[${course.replace(/"/g, '&quot;')}][]" 
+                                                    value="${group.replace(/"/g, '&quot;')}" 
+                                                    id="edit_group_${index}_${groupIndex}"
+                                                >
+                                                <label class="form-check-label small" for="edit_group_${index}_${groupIndex}">
+                                                    ${group}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button 
+                                    type="button" 
+                                    class="btn btn-outline-primary btn-sm me-1"
+                                    onclick="selectAllForCourse('${course.replace(/'/g, "\\'")}')"
+                                >
+                                    All
+                                </button>
+                                <button 
+                                    type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    onclick="deselectAllForCourse('${course.replace(/'/g, "\\'")}')"
+                                >
+                                    None
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                modalBody.appendChild(courseCard);
+            });
+            
+            // Update the hidden form inputs with new programme/year
+            const groupsForm = document.getElementById('groupSelectionForm');
+            if (groupsForm) {
+                const programmeInput = groupsForm.querySelector('input[name="programme"]');
+                const yearInput = groupsForm.querySelector('input[name="year"]');
+                const branchesInput = groupsForm.querySelector('input[name="branches"]');
+                
+                if (programmeInput) programmeInput.value = currentProgramme;
+                if (yearInput) yearInput.value = currentYear;
+                if (branchesInput) branchesInput.value = 'all';
+            }
+            
+            // Re-attach event listeners to new checkboxes
+            const newCheckboxes = modalBody.querySelectorAll('input[type="checkbox"]');
+            newCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    console.log('Checkbox changed:', this.name, '=', this.value, 'checked:', this.checked);
+                    
+                    // Update badges immediately
+                    updateSelectedGroupsBadges();
+                    
+                    // Update URL immediately for live sharing
+                    clearTimeout(window.urlUpdateTimeout);
+                    window.urlUpdateTimeout = setTimeout(() => {
+                        try {
+                            updateURL();
+                            console.log('URL updated live after checkbox change');
+                        } catch (error) {
+                            console.error('Error updating URL live:', error);
+                        }
+                    }, 150);
+                    
+                    // Debounce the calendar update
+                    clearTimeout(window.updateTimeout);
+                    window.updateTimeout = setTimeout(() => {
+                        if (window.updateCalendarLive) {
+                            window.updateCalendarLive();
+                        }
+                    }, 300);
+                });
+            });
+            
+            console.log('Groups modal updated successfully');
+            
+        } catch (error) {
+            console.error('Error updating groups modal:', error);
+        }
+    }
+    
+    // Function to update timetable based on control selections
+    async function updateTimetableFromControls() {
+        if (!currentProgramme || !currentYear) return;
+        
+        // Don't trigger update during initial page setup
+        if (isInitializing) {
+            console.log('Skipping update during initialization');
+            return;
+        }
+        
+        try {
+            console.log('Dynamically updating timetable with:', { programme: currentProgramme, year: currentYear, branches: 'all' });
+            
+            // Fetch complete timetable HTML to extract course data and events
+            const response = await fetch(`/timetable?programme=${currentProgramme}&year=${currentYear}&branches=all`);
+            const html = await response.text();
+            
+            // Parse the response to extract the data we need
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract script content to get events data
+            const scripts = doc.querySelectorAll('script');
+            let newEvents = [];
+            let newCourses = [];
+            let newCourseGroups = {};
+            let newSelectedGroups = {};
+            
+            scripts.forEach(script => {
+                const content = script.textContent;
+                if (content && content.includes('const events =')) {
+                    console.log('Found script with data, extracting...');
+                    
+                    // Extract events data
+                    const eventsMatch = content.match(/const events = (\[.*?\]);/s);
+                    if (eventsMatch) {
+                        try {
+                            newEvents = JSON.parse(eventsMatch[1]);
+                            console.log('Extracted events:', newEvents.length);
+                        } catch (e) {
+                            console.error('Error parsing events:', e);
+                        }
+                    }
+                    
+                    // Extract courses data
+                    const coursesMatch = content.match(/const courses = (\[.*?\]);/s);
+                    if (coursesMatch) {
+                        try {
+                            newCourses = JSON.parse(coursesMatch[1]);
+                            console.log('Extracted courses:', newCourses);
+                        } catch (e) {
+                            console.error('Error parsing courses:', e);
+                        }
+                    }
+                    
+                    // Extract courseGroups data  
+                    const courseGroupsMatch = content.match(/const courseGroups = (\{.*?\});/s);
+                    if (courseGroupsMatch) {
+                        try {
+                            newCourseGroups = JSON.parse(courseGroupsMatch[1]);
+                            console.log('Extracted courseGroups:', Object.keys(newCourseGroups));
+                        } catch (e) {
+                            console.error('Error parsing courseGroups:', e);
+                        }
+                    }
+                }
+            });
+            
+            // Update calendar with new events
+            if (window.calendar && newEvents.length >= 0) {
+                console.log('Updating calendar with', newEvents.length, 'events');
+                window.calendar.removeAllEventSources();
+                window.calendar.addEventSource(newEvents);
+                window.calendar.refetchEvents();
+            }
+            
+            // Update the groups modal with new course data
+            console.log('Checking if should update modal - newCourses:', newCourses.length, 'newCourseGroups keys:', Object.keys(newCourseGroups).length);
+            if (newCourses.length > 0 && Object.keys(newCourseGroups).length > 0) {
+                console.log('Updating groups modal with:', { newCourses, newCourseGroups });
+                await updateGroupsModal(newCourses, newCourseGroups);
+                console.log('Groups modal updated successfully');
+            } else {
+                console.log('NOT updating modal - insufficient data. newCourses:', newCourses, 'newCourseGroups:', newCourseGroups);
+            }
+            
+            // Update URL in browser without reload (remove groups parameter for clean slate)
+            const newUrl = `/timetable?programme=${currentProgramme}&year=${currentYear}&branches=all`;
+            window.history.replaceState({
+                programme: currentProgramme,
+                year: currentYear,
+                branches: 'all'
+            }, document.title, newUrl);
+            console.log('URL updated and groups parameter cleared');
+            
+            // Apply default group selection (select all groups) after modal update
+            setTimeout(() => {
+                selectAllGroups();
+                updateSelectedGroupsBadges();
+                console.log('Applied default group selection (all groups) after programme/year change');
+            }, 100);
+            
+            console.log('Timetable updated dynamically');
+            
+        } catch (error) {
+            console.error('Error updating timetable:', error);
+        }
     }
     
     // Add some custom styling
@@ -1011,6 +1486,66 @@ document.addEventListener('DOMContentLoaded', function() {
         /* Keep backdrop but make it less opaque for better calendar visibility */
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Interactive control styling */
+        .form-select-sm {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #ced4da;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-select-sm:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        /* Dynamic selector buttons */
+        .year-button {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+            transition: all 0.15s ease-in-out;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+        }
+        
+        .year-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #yearSelection {
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        
+        /* Responsive adjustments for controls */
+        @media (max-width: 768px) {
+            .form-select-sm {
+                min-width: 120px;
+                font-size: 0.75rem;
+            }
+            
+            .year-button {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
+            }
+            
+            /* Stack controls vertically on small screens */
+            .col-md-3, .col-md-9 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .col-md-9 .d-flex {
+                justify-content: center !important;
+                margin-top: 0.5rem;
+            }
         }
         
         @media (max-width: 767px) {

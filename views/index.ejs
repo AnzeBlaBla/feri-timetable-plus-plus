@@ -36,20 +36,7 @@
                             </div>
                         </div>
                         
-                        
-                        <!-- Branch Selection -->
-                        <div id="branchSelection" class="mb-4" style="display: none;">
-                            <label class="form-label">Branches</label>
-                            <div id="branchLoading" class="text-center mb-3">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">Loading branches...</span>
-                                </div>
-                                <small class="ms-2">Loading branches...</small>
-                            </div>
-                            <div id="branchOptions" class="d-flex flex-wrap gap-2" style="display: none;">
-                                <!-- Branch checkboxes will be inserted here -->
-                            </div>
-                        </div>
+
                         
                         <div class="row">
                             <div class="col-12">
@@ -77,55 +64,7 @@
 </div>
 
 <style>
-.branch-option {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid #dee2e6;
-    border-radius: 0.375rem;
-    position: relative;
-    min-height: 80px;
-    min-width: 150px;
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
 
-.branch-option:hover {
-    border-color: #0d6efd;
-    background-color: #f8f9fa;
-}
-
-.branch-option.selected {
-    border-color: #198754;
-    background-color: #d1e7dd;
-    color: #198754;
-}
-
-.branch-checkmark {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 20px;
-    height: 20px;
-    background-color: #198754;
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 12px;
-}
-
-.branch-option.selected .branch-checkmark {
-    display: flex;
-}
-
-#branchOptions {
-    max-height: 300px;
-    overflow-y: auto;
-}
 
 .year-button {
     cursor: pointer;
@@ -156,10 +95,8 @@
 
 <script>
 let programmes = [];
-let branches = [];
 let selectedProgramme = null;
 let selectedYear = null;
-let selectedBranches = []; // Will be populated with all branch IDs when branches load
 
 // DOM Elements
 const loadingDiv = document.getElementById('loading');
@@ -167,9 +104,6 @@ const selectionForm = document.getElementById('selectionForm');
 const programmeSelect = document.getElementById('programmeSelect');
 const yearSelection = document.getElementById('yearSelection');
 const yearPlaceholder = document.getElementById('yearPlaceholder');
-const branchSelection = document.getElementById('branchSelection');
-const branchLoading = document.getElementById('branchLoading');
-const branchOptions = document.getElementById('branchOptions');
 const submitBtn = document.getElementById('submitBtn');
 const errorDiv = document.getElementById('error');
 const errorMessage = document.getElementById('errorMessage');
@@ -213,7 +147,8 @@ function populateProgrammeSelect() {
     programmes.forEach(programme => {
         const option = document.createElement('option');
         option.value = programme.id;
-        option.textContent = `${programme.name} (${programme.year})`;
+        const yearText = programme.year === '1' ? '1 year' : `${programme.year} years`;
+        option.textContent = `${programme.name} (${yearText})`;
         option.dataset.year = programme.year;
         option.dataset.name = programme.name;
         programmeSelect.appendChild(option);
@@ -234,9 +169,8 @@ programmeSelect.addEventListener('change', function() {
         // Populate years from 1 to programme total years
         populateYearButtons();
         
-        // Reset year and branch selections when programme changes
+        // Reset year selection when programme changes
         selectedYear = null;
-        hideBranches();
         
     } else {
         selectedProgramme = null;
@@ -244,7 +178,6 @@ programmeSelect.addEventListener('change', function() {
         yearSelection.innerHTML = '';
         yearSelection.style.display = 'none';
         yearPlaceholder.style.display = 'block';
-        hideBranches();
     }
     
     updateSubmitButton();
@@ -293,144 +226,17 @@ function selectYear(year) {
         }
     });
     
-    // Load branches for selected programme and year
-    if (selectedProgramme && selectedYear) {
-        loadBranches();
-    } else {
-        hideBranches();
-    }
-    
     updateSubmitButton();
-}
-
-// Load branches for selected programme and year
-async function loadBranches() {
-    if (!selectedProgramme || !selectedYear) return;
-    
-    try {
-        // Show branch loading
-        branchSelection.style.display = 'block';
-        branchLoading.style.display = 'block';
-        branchOptions.style.display = 'none';
-        
-        const response = await fetch(`/api/programmes/${selectedProgramme.id}/years/${selectedYear}/branches`);
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to load branches');
-        }
-        
-        branches = data.branches;
-        
-        // Hide loading first
-        branchLoading.style.display = 'none';
-        
-        // Populate options (handles single branch case internally)
-        populateBranchOptions();
-        
-        // If more than one branch, show options and select all by default
-        if (branches.length > 1) {
-            branchOptions.style.display = 'block';
-            selectedBranches = branches.map(branch => branch.id);
-            updateBranchSelection();
-        } else {
-            // Single branch case - hide the entire branch selection UI
-            branchSelection.style.display = 'none';
-        }
-        
-    } catch (error) {
-        console.error('Error loading branches:', error);
-        showError('Failed to load branches: ' + error.message);
-        hideBranches();
-    }
-}
-
-// Hide branches section
-function hideBranches() {
-    branchSelection.style.display = 'none';
-    branches = [];
-    selectedBranches = [];
-}
-
-// Populate branch options
-function populateBranchOptions() {
-    branchOptions.innerHTML = '';
-    
-    // If only one branch, auto-select it and don't show UI
-    if (branches.length === 1) {
-        selectedBranches = [branches[0].id];
-        return; // Don't create any UI elements
-    }
-    
-    // Add individual branch options in a flex row with wrap
-    branches.forEach(branch => {
-        const option = document.createElement('div');
-        option.className = 'branch-option p-3';
-        option.dataset.branchId = branch.id;
-        option.innerHTML = `
-            <div class="branch-checkmark">✓</div>
-            <div>
-                <strong>${branch.branchName}</strong>
-            </div>
-        `;
-        branchOptions.appendChild(option);
-    });
-    
-    // Add click handlers
-    document.querySelectorAll('.branch-option').forEach(option => {
-        option.addEventListener('click', function() {
-            const branchId = this.dataset.branchId;
-            toggleBranchSelection(branchId);
-        });
-    });
-}
-
-// Toggle branch selection
-function toggleBranchSelection(branchId) {
-    if (selectedBranches.includes(branchId)) {
-        // Remove this branch
-        selectedBranches = selectedBranches.filter(id => id !== branchId);
-    } else {
-        // Add this branch
-        selectedBranches.push(branchId);
-    }
-    
-    updateBranchSelection();
-    updateSubmitButton();
-}
-
-// Update visual branch selection
-function updateBranchSelection() {
-    document.querySelectorAll('.branch-option').forEach(option => {
-        const branchId = option.dataset.branchId;
-        
-        // Remove selection class
-        option.classList.remove('selected');
-        
-        if (selectedBranches.includes(branchId)) {
-            option.classList.add('selected');
-        }
-    });
 }
 
 // Update submit button state
 function updateSubmitButton() {
-    if (selectedProgramme && selectedYear && selectedBranches.length > 0) {
+    if (selectedProgramme && selectedYear) {
         submitBtn.disabled = false;
-        
-        // Update button text based on branch selection
-        const totalBranches = branches.length;
-        const selectedCount = selectedBranches.length;
-        
         submitBtn.textContent = 'Show Timetable';
-        
     } else {
         submitBtn.disabled = true;
-        if (!selectedProgramme || !selectedYear) {
-            submitBtn.textContent = 'Select Programme and Year First';
-        } else {
-            submitBtn.textContent = 'Select at least one branch';
-        }
+        submitBtn.textContent = 'Select Programme and Year First';
     }
 }
 
@@ -438,28 +244,17 @@ function updateSubmitButton() {
 selectionForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    if (!selectedProgramme || !selectedYear || selectedBranches.length === 0) {
-        showError('Please select programme, year, and at least one branch');
+    if (!selectedProgramme || !selectedYear) {
+        showError('Please select programme and year');
         return;
     }
     
     try {
-        // Create URL parameters for the timetable route
+        // Create URL parameters for the timetable route - always use all branches
         const params = new URLSearchParams();
         params.set('programme', selectedProgramme.id);
         params.set('year', selectedYear);
-        
-        // Handle branch selection
-        const totalBranches = branches.length;
-        const selectedCount = selectedBranches.length;
-        
-        if (selectedCount === totalBranches || selectedCount === 0) {
-            // All branches or none selected (fallback to all)
-            params.set('branches', 'all');
-        } else {
-            // Specific branches selected
-            params.set('branches', selectedBranches.join(','));
-        }
+        params.set('branches', 'all');
         
         // Redirect to timetable view
         const timetableUrl = `/timetable?${params.toString()}`;
