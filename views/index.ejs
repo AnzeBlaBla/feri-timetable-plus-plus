@@ -2,35 +2,67 @@
 
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
+        <div class="col-md-10 col-lg-8">
             <div class="card shadow">
                 <div class="card-body">
                     <h1 class="card-title text-center mb-4">FERI Timetable++</h1>
-                    <p class="text-muted text-center mb-4">Enter your FERI timetable URL to get started</p>
+                    <p class="text-muted text-center mb-4">Select your programme and year to get started</p>
                     
-                    <form id="urlForm">
-                        <div class="mb-3">
-                            <label for="urlInput" class="form-label">Timetable URL</label>
-                            <input 
-                                type="url" 
-                                class="form-control" 
-                                id="urlInput" 
-                                placeholder="https://www.wise-tt.com/wtt_um_feri/index.jsp?filterId=...;"
-                                required
-                            >
-                            <div class="form-text">
-                                Paste your FERI timetable URL from wise-tt.com
-                            </div>
+                    <!-- Loading indicator -->
+                    <div id="loading" class="text-center mb-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading programmes...</span>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Extract Filter ID</button>
-                    </form>
-
-                    <div id="result" class="mt-3" style="display: none;">
-                        <div class="alert alert-success" role="alert">
-                            <strong>Filter ID:</strong> <span id="filterId"></span>
-                        </div>
+                        <p class="mt-2">Loading programmes...</p>
                     </div>
 
+                    <!-- Programme and Year Selection Form -->
+                    <form id="selectionForm" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="programmeSelect" class="form-label">Programme</label>
+                                <select class="form-select" id="programmeSelect" required>
+                                    <option value="">Select a programme...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Year</label>
+                                <div id="yearSelection" class="d-flex flex-wrap gap-2" style="display: none !important;">
+                                    <!-- Year buttons will be inserted here -->
+                                </div>
+                                <div id="yearPlaceholder" class="text-muted small">
+                                    Select a programme first
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Branch Selection -->
+                        <div id="branchSelection" class="mb-4" style="display: none;">
+                            <label class="form-label">Branches</label>
+                            <div id="branchLoading" class="text-center mb-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading branches...</span>
+                                </div>
+                                <small class="ms-2">Loading branches...</small>
+                            </div>
+                            <div id="branchOptions" class="d-flex flex-wrap gap-2" style="display: none;">
+                                <!-- Branch checkboxes will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100" disabled id="submitBtn">
+                                    Select Programme and Year First
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+
+
+                    <!-- Error Display -->
                     <div id="error" class="mt-3" style="display: none;">
                         <div class="alert alert-danger" role="alert">
                             <span id="errorMessage"></span>
@@ -38,71 +70,419 @@
                     </div>
                 </div>
             </div>
+            
+
         </div>
     </div>
 </div>
 
+<style>
+.branch-option {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    position: relative;
+    min-height: 80px;
+    min-width: 150px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.branch-option:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.branch-option.selected {
+    border-color: #198754;
+    background-color: #d1e7dd;
+    color: #198754;
+}
+
+.branch-checkmark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background-color: #198754;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+}
+
+.branch-option.selected .branch-checkmark {
+    display: flex;
+}
+
+#branchOptions {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.year-button {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    color: #495057;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
+    user-select: none;
+}
+
+.year-button:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.year-button.selected {
+    border-color: #0d6efd;
+    background-color: #0d6efd;
+    color: white;
+}
+</style>
+
 <script>
-document.getElementById('urlForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const urlInput = document.getElementById('urlInput').value;
-    const resultDiv = document.getElementById('result');
-    const errorDiv = document.getElementById('error');
-    const filterIdSpan = document.getElementById('filterId');
-    const errorMessage = document.getElementById('errorMessage');
-    
-    // Hide previous results
-    resultDiv.style.display = 'none';
-    errorDiv.style.display = 'none';
-    
+let programmes = [];
+let branches = [];
+let selectedProgramme = null;
+let selectedYear = null;
+let selectedBranches = []; // Will be populated with all branch IDs when branches load
+
+// DOM Elements
+const loadingDiv = document.getElementById('loading');
+const selectionForm = document.getElementById('selectionForm');
+const programmeSelect = document.getElementById('programmeSelect');
+const yearSelection = document.getElementById('yearSelection');
+const yearPlaceholder = document.getElementById('yearPlaceholder');
+const branchSelection = document.getElementById('branchSelection');
+const branchLoading = document.getElementById('branchLoading');
+const branchOptions = document.getElementById('branchOptions');
+const submitBtn = document.getElementById('submitBtn');
+const errorDiv = document.getElementById('error');
+const errorMessage = document.getElementById('errorMessage');
+
+// Load programmes when page loads
+document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // Parse the URL
-        const url = new URL(urlInput);
-        
-        // Validate the URL structure
-        if (!url.hostname.includes('wise-tt.com')) {
-            throw new Error('URL must be from wise-tt.com domain');
-        }
-        
-        if (!url.pathname.includes('wtt_um_feri')) {
-            throw new Error('URL must contain "wtt_um_feri" in the path');
-        }
-        
-        // Extract filterId parameter
-        const filterId = url.searchParams.get('filterId');
-        
-        if (!filterId) {
-            throw new Error('filterId parameter not found in URL');
-        }
-        
-        if (filterId.trim() === '') {
-            throw new Error('filterId parameter is empty');
-        }
-        
-        // Success - show the filter ID
-        filterIdSpan.textContent = filterId;
-        resultDiv.style.display = 'block';
-        
-        // Redirect to groups page
-        setTimeout(() => {
-            window.location.href = `/groups/${encodeURIComponent(filterId)}`;
-        }, 1000);
-        
+        await loadProgrammes();
     } catch (error) {
-        // Show error message
-        errorMessage.textContent = error.message;
-        errorDiv.style.display = 'block';
+        showError('Failed to load initial data: ' + error.message);
     }
 });
 
-// Auto-fill example URL for testing
-document.addEventListener('DOMContentLoaded', function() {
-    const urlInput = document.getElementById('urlInput');
-    if (urlInput.value === '') {
-        urlInput.value = 'https://www.wise-tt.com/wtt_um_feri/index.jsp?filterId=0;86,568;0;0;';
+// Load programmes from API
+async function loadProgrammes() {
+    try {
+        const response = await fetch('/api/programmes');
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load programmes');
+        }
+        
+        programmes = data.programmes;
+        populateProgrammeSelect();
+        
+        // Hide loading, show form
+        loadingDiv.style.display = 'none';
+        selectionForm.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading programmes:', error);
+        throw error;
+    }
+}
+
+// Populate programme select dropdown
+function populateProgrammeSelect() {
+    programmeSelect.innerHTML = '<option value="">Select a programme...</option>';
+    
+    programmes.forEach(programme => {
+        const option = document.createElement('option');
+        option.value = programme.id;
+        option.textContent = `${programme.name} (${programme.year})`;
+        option.dataset.year = programme.year;
+        option.dataset.name = programme.name;
+        programmeSelect.appendChild(option);
+    });
+}
+
+// Handle programme selection
+programmeSelect.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (selectedOption.value) {
+        selectedProgramme = {
+            id: selectedOption.value,
+            name: selectedOption.dataset.name,
+            year: selectedOption.dataset.year
+        };
+        
+        // Populate years from 1 to programme total years
+        populateYearButtons();
+        
+        // Reset year and branch selections when programme changes
+        selectedYear = null;
+        hideBranches();
+        
+    } else {
+        selectedProgramme = null;
+        selectedYear = null;
+        yearSelection.innerHTML = '';
+        yearSelection.style.display = 'none';
+        yearPlaceholder.style.display = 'block';
+        hideBranches();
+    }
+    
+    updateSubmitButton();
+});
+
+// Populate year buttons based on selected programme
+function populateYearButtons() {
+    if (!selectedProgramme) return;
+    
+    // The year field represents total years in the programme
+    const totalYears = parseInt(selectedProgramme.year);
+    
+    // Clear existing buttons
+    yearSelection.innerHTML = '';
+    
+    // Create buttons for each year from 1 to totalYears
+    for (let year = 1; year <= totalYears; year++) {
+        const button = document.createElement('div');
+        button.className = 'year-button';
+        button.textContent = year.toString();
+        button.dataset.year = year.toString();
+        
+        // Add click handler
+        button.addEventListener('click', function() {
+            selectYear(year.toString());
+        });
+        
+        yearSelection.appendChild(button);
+    }
+    
+    // Show year selection and hide placeholder
+    yearSelection.style.display = 'flex';
+    yearPlaceholder.style.display = 'none';
+}
+
+// Handle year selection
+function selectYear(year) {
+    // Update selected year
+    selectedYear = year;
+    
+    // Update button visual states
+    document.querySelectorAll('.year-button').forEach(button => {
+        button.classList.remove('selected');
+        if (button.dataset.year === year) {
+            button.classList.add('selected');
+        }
+    });
+    
+    // Load branches for selected programme and year
+    if (selectedProgramme && selectedYear) {
+        loadBranches();
+    } else {
+        hideBranches();
+    }
+    
+    updateSubmitButton();
+}
+
+// Load branches for selected programme and year
+async function loadBranches() {
+    if (!selectedProgramme || !selectedYear) return;
+    
+    try {
+        // Show branch loading
+        branchSelection.style.display = 'block';
+        branchLoading.style.display = 'block';
+        branchOptions.style.display = 'none';
+        
+        const response = await fetch(`/api/programmes/${selectedProgramme.id}/years/${selectedYear}/branches`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load branches');
+        }
+        
+        branches = data.branches;
+        
+        // Hide loading first
+        branchLoading.style.display = 'none';
+        
+        // Populate options (handles single branch case internally)
+        populateBranchOptions();
+        
+        // If more than one branch, show options and select all by default
+        if (branches.length > 1) {
+            branchOptions.style.display = 'block';
+            selectedBranches = branches.map(branch => branch.id);
+            updateBranchSelection();
+        } else {
+            // Single branch case - hide the entire branch selection UI
+            branchSelection.style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Error loading branches:', error);
+        showError('Failed to load branches: ' + error.message);
+        hideBranches();
+    }
+}
+
+// Hide branches section
+function hideBranches() {
+    branchSelection.style.display = 'none';
+    branches = [];
+    selectedBranches = [];
+}
+
+// Populate branch options
+function populateBranchOptions() {
+    branchOptions.innerHTML = '';
+    
+    // If only one branch, auto-select it and don't show UI
+    if (branches.length === 1) {
+        selectedBranches = [branches[0].id];
+        return; // Don't create any UI elements
+    }
+    
+    // Add individual branch options in a flex row with wrap
+    branches.forEach(branch => {
+        const option = document.createElement('div');
+        option.className = 'branch-option p-3';
+        option.dataset.branchId = branch.id;
+        option.innerHTML = `
+            <div class="branch-checkmark">✓</div>
+            <div>
+                <strong>${branch.branchName}</strong>
+            </div>
+        `;
+        branchOptions.appendChild(option);
+    });
+    
+    // Add click handlers
+    document.querySelectorAll('.branch-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const branchId = this.dataset.branchId;
+            toggleBranchSelection(branchId);
+        });
+    });
+}
+
+// Toggle branch selection
+function toggleBranchSelection(branchId) {
+    if (selectedBranches.includes(branchId)) {
+        // Remove this branch
+        selectedBranches = selectedBranches.filter(id => id !== branchId);
+    } else {
+        // Add this branch
+        selectedBranches.push(branchId);
+    }
+    
+    updateBranchSelection();
+    updateSubmitButton();
+}
+
+// Update visual branch selection
+function updateBranchSelection() {
+    document.querySelectorAll('.branch-option').forEach(option => {
+        const branchId = option.dataset.branchId;
+        
+        // Remove selection class
+        option.classList.remove('selected');
+        
+        if (selectedBranches.includes(branchId)) {
+            option.classList.add('selected');
+        }
+    });
+}
+
+// Update submit button state
+function updateSubmitButton() {
+    if (selectedProgramme && selectedYear && selectedBranches.length > 0) {
+        submitBtn.disabled = false;
+        
+        // Update button text based on branch selection
+        const totalBranches = branches.length;
+        const selectedCount = selectedBranches.length;
+        
+        submitBtn.textContent = 'Show Timetable';
+        
+    } else {
+        submitBtn.disabled = true;
+        if (!selectedProgramme || !selectedYear) {
+            submitBtn.textContent = 'Select Programme and Year First';
+        } else {
+            submitBtn.textContent = 'Select at least one branch';
+        }
+    }
+}
+
+// Handle form submission
+selectionForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!selectedProgramme || !selectedYear || selectedBranches.length === 0) {
+        showError('Please select programme, year, and at least one branch');
+        return;
+    }
+    
+    try {
+        // Create URL parameters for the timetable route
+        const params = new URLSearchParams();
+        params.set('programme', selectedProgramme.id);
+        params.set('year', selectedYear);
+        
+        // Handle branch selection
+        const totalBranches = branches.length;
+        const selectedCount = selectedBranches.length;
+        
+        if (selectedCount === totalBranches || selectedCount === 0) {
+            // All branches or none selected (fallback to all)
+            params.set('branches', 'all');
+        } else {
+            // Specific branches selected
+            params.set('branches', selectedBranches.join(','));
+        }
+        
+        // Redirect to timetable view
+        const timetableUrl = `/timetable?${params.toString()}`;
+        console.log('Redirecting to:', timetableUrl);
+        window.location.href = timetableUrl;
+        
+    } catch (error) {
+        showError('Error: ' + error.message);
     }
 });
+
+// Show error message
+function showError(message) {
+    errorMessage.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
+
+
 </script>
 
 <%- include("partials/footer") %>

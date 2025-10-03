@@ -1,2 +1,5 @@
 dev_test
 node_modules
+.env
+
+*.apib
