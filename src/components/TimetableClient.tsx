@@ -41,6 +41,23 @@ export function TimetableClient({
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const [isInitialMount, setIsInitialMount] = useState(true);
 
+  // Auto-open modal on first visit (when no groups parameter)
+  useEffect(() => {
+    const hasGroupsParam = searchParams.get('groups');
+    if (!hasGroupsParam && typeof window !== 'undefined' && window.bootstrap) {
+      // Small delay to ensure modal DOM is ready
+      const timer = setTimeout(() => {
+        const modalEl = document.getElementById('groupsModal');
+        if (modalEl) {
+          const modal = new window.bootstrap.Modal(modalEl);
+          modal.show();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // Only run once on mount
+
   // Update state when props change (e.g., year or programme changes)
   useEffect(() => {
     setSelectedGroups(initialSelectedGroups);
@@ -159,10 +176,8 @@ export function TimetableClient({
 
   return (
     <>
-      {/* External CSS and JS */}
+      {/* External CSS */}
       <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css' rel='stylesheet' />
-      <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
-      <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js' async />
 
       <div className="container-fluid mt-4">
         <div className="row">

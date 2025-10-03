@@ -196,7 +196,7 @@ function needsLightText(hslColor: string): boolean {
  * Convert lectures to FullCalendar events
  */
 export function convertLecturesToEvents(lectures: LectureWise[]): CalendarEvent[] {
-  return lectures.map(lecture => {
+  return lectures.map((lecture, index) => {
     const groupNames = lecture.groups?.map(g => g.name).join(', ') || '';
     const lecturerNames = lecture.lecturers?.map(l => l.name).join(', ') || '';
     const roomNames = lecture.rooms?.map(r => r.name).join(', ') || '';
@@ -214,8 +214,12 @@ export function convertLecturesToEvents(lectures: LectureWise[]): CalendarEvent[
       title += ` - ${roomNames}`;
     }
     
+    // Create unique ID by combining lecture ID with group and room info
+    // This ensures that different groups/rooms at the same time get different IDs
+    const uniqueId = `${lecture.id}-${groupNames}-${roomNames}-${index}`;
+    
     return {
-      id: lecture.id,
+      id: uniqueId,
       title,
       start: lecture.start_time,
       end: lecture.end_time,

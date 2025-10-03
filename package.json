@@ -11,6 +11,12 @@
   "author": "AnzeBlaBla",
   "license": "ISC",
   "dependencies": {
+    "@fullcalendar/core": "^6.1.19",
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/list": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
     "bootstrap": "^5.3.8",
     "ical.js": "^2.2.1",
     "jsdom": "^27.0.0",

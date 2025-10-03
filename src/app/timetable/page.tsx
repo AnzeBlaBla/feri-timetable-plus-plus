@@ -50,10 +50,10 @@ export default async function TimetablePage({
     const courseGroups = buildCourseGroupMapping(lectures, allGroups);
     const courses = Object.keys(courseGroups).sort();
 
-    // Parse selected groups from URL or use defaults (all groups)
+    // Parse selected groups from URL or select all groups by default
     const selectedGroups = groupsParam
       ? parseGroupsParam(groupsParam)
-      : getDefaultSelectedGroups(courseGroups);
+      : getDefaultSelectedGroups(courseGroups); // Default = all groups selected
 
     // Filter lectures and convert to calendar events
     const filteredLectures = filterLecturesByGroups(lectures, selectedGroups);
