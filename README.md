@@ -1,8 +1,8 @@
 # Feri Timetable Plus Plus
 
 A timetable application for FERI UM. Goal is group selection per subject (as that's not supported on the official site, for some reason...)
-> [!WARNING] VIBE CODING AHEAD
-> This project is not a reflection of my coding ability. It is a vibecoded app that was created purely for myself and is not meant to be trusted, used by other people, or even touched or upgraded, ever, in the future.
+> [!WARNING]
+> VIBE CODING AHEAD: This project is a vibecoded app that was created purely for myself and is not meant to be trusted, used by other people, or even touched or upgraded, ever, in the future. It is not a reflection of my coding ability.
 > If you are a masochist and would like to look into the code, I recommend a premium subscription to your LLM of choice, because any code in here has not been seen by a human, and should never be.
 
 
