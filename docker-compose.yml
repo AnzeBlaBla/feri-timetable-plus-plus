@@ -48,6 +48,8 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - WTT_USERNAME=${WTT_USERNAME}
+      - WTT_PASSWORD=${WTT_PASSWORD}
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
