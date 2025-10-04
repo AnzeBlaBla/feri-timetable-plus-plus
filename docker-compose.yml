@@ -1,23 +1,76 @@
 version: '3.8'
 
 services:
+  traefik:
+    image: traefik:v2.10
+    container_name: feri-timetable-traefik
+    restart: unless-stopped
+    command:
+      # Enable Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      
+      # Configure entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      
+      # HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      
+      # Let's Encrypt configuration
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@anzeblag.us"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      
+      # Logging (optional, can be removed in production)
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certificates:/letsencrypt
+    networks:
+      - feri-network
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: feri-timetable-app
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
-      # Add your environment variables here
-      # You can also use an .env file with env_file: .env
       - WISE_USERNAME=${WISE_USERNAME}
       - WISE_PASSWORD=${WISE_PASSWORD}
       - WISE_URL=${WISE_URL}
     env_file:
       - .env.local
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+      
+      # HTTP router (will redirect to HTTPS)
+      - "traefik.http.routers.timetable-http.rule=Host(`urnik.anzeblag.us`)"
+      - "traefik.http.routers.timetable-http.entrypoints=web"
+      
+      # HTTPS router with Let's Encrypt
+      - "traefik.http.routers.timetable-https.rule=Host(`urnik.anzeblag.us`)"
+      - "traefik.http.routers.timetable-https.entrypoints=websecure"
+      - "traefik.http.routers.timetable-https.tls=true"
+      - "traefik.http.routers.timetable-https.tls.certresolver=letsencrypt"
+      
+      # Service configuration
+      - "traefik.http.services.timetable.loadbalancer.server.port=3000"
+      
+      # Security headers
+      - "traefik.http.middlewares.security-headers.headers.sslRedirect=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.routers.timetable-https.middlewares=security-headers"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
@@ -26,6 +79,12 @@ services:
       start_period: 40s
     networks:
       - feri-network
+    depends_on:
+      - traefik
+
+volumes:
+  traefik-certificates:
+    driver: local
 
 networks:
   feri-network:
