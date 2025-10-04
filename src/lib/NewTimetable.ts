@@ -62,6 +62,8 @@ export class NewTimetable {
         }
         
         const base64Credentials = Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64')
+
+        console.log(`Using credentials: ${base64Credentials}`)
         
         console.log('Fetching fresh authentication token...')
         const response = await fetch(`${API_URL}login`, {
