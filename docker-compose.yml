@@ -6,6 +6,10 @@ services:
     container_name: feri-timetable-traefik
     restart: unless-stopped
     command:
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      
       # Enable Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
