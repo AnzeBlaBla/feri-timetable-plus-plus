@@ -62,6 +62,9 @@
 [data-bs-theme="dark"] .fc-day {
   background-color: #2c3034 !important;
 }
+[data-bs-theme="dark"] .fc-timegrid-axis {
+  background-color: #2c3034 !important;
+}
 
 [data-bs-theme="dark"] .fc-list-day-cushion {
   background-color: #2c3034 !important;
