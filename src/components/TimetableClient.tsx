@@ -40,7 +40,9 @@ export function TimetableClient({
   const [isUpdating, setIsUpdating] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [showShareTooltip, setShowShareTooltip] = useState(false);
+  const [icsUrl, setIcsUrl] = useState('');
   const [isInitialMount, setIsInitialMount] = useState(true);
+  const [copyMessage, setCopyMessage] = useState('');
 
   // Auto-open modal on first visit (when no groups parameter)
   useEffect(() => {
@@ -145,16 +147,23 @@ export function TimetableClient({
   };
 
   const handleShare = () => {
-    setShareUrl(window.location.href);
-    setShowShareTooltip(true);
+    if (showShareTooltip) {
+      setShowShareTooltip(false);
+    } else {
+      setShareUrl(window.location.href);
+      setShowShareTooltip(true);
+    }
   };
 
   const handleCopyUrl = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      // Visual feedback could be added here
+      setCopyMessage('Share link copied to clipboard!');
+      setTimeout(() => setCopyMessage(''), 3000);
     } catch (error) {
       console.error('Failed to copy URL:', error);
+      setCopyMessage('Failed to copy');
+      setTimeout(() => setCopyMessage(''), 3000);
     }
   };
 
@@ -173,6 +182,28 @@ export function TimetableClient({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleCopyIcsUrl = async () => {
+    const params = new URLSearchParams({
+      programme: programmeId,
+      year: year,
+      branches: branches,
+      groups: encodeGroups(selectedGroups),
+    });
+    
+    const fullIcsUrl = `${window.location.origin}/api/timetable.ics?${params.toString()}`;
+    
+    try {
+      await navigator.clipboard.writeText(fullIcsUrl);
+      setIcsUrl(fullIcsUrl);
+      setCopyMessage('Calendar link copied to clipboard!');
+      setTimeout(() => setCopyMessage(''), 3000);
+    } catch (error) {
+      console.error('Failed to copy ICS URL:', error);
+      setCopyMessage('Failed to copy');
+      setTimeout(() => setCopyMessage(''), 3000);
+    }
   };
 
   return (
@@ -268,14 +299,37 @@ export function TimetableClient({
                         </div>
                       )}
                       
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={handleDownloadIcs}
-                        title="Download .ics calendar file"
-                      >
-                        <i className="bi bi-download"></i>{' '}
-                        <span className="d-none d-md-inline">.ics</span>
-                      </button>
+                      {/* ICS Download/Copy Split Button */}
+                      <div className="btn-group" role="group">
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={handleDownloadIcs}
+                          title="Download .ics calendar file"
+                        >
+                          <i className="bi bi-download"></i>{' '}
+                          <span className="d-none d-md-inline">.ics</span>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-success"
+                          onClick={handleCopyIcsUrl}
+                          title="Copy .ics link to clipboard"
+                        >
+                          <i className="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                      
+                      {/* Copy Toast Notification */}
+                      {copyMessage && (
+                        <div 
+                          className="position-fixed top-0 start-50 translate-middle-x mt-3" 
+                          style={{ zIndex: 9999 }}
+                        >
+                          <div className="alert alert-success alert-dismissible fade show shadow-lg mb-0" role="alert">
+                            <i className="bi bi-check-circle-fill me-2"></i>
+                            {copyMessage}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
