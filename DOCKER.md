@@ -17,7 +17,7 @@ Edit `.env.local` and add your WISE credentials:
 ```env
 WISE_USERNAME=your_wise_username
 WISE_PASSWORD=your_wise_password
-WISE_URL=https://wise.um.si/urnik/2024_2025
+WISE_URL=https://...
 ```
 
 ⚠️ **Important**: If your password contains `$` character, escape it with backslash: `\$`

@@ -43,9 +43,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - WISE_USERNAME=${WISE_USERNAME}
-      - WISE_PASSWORD=${WISE_PASSWORD}
-      - WISE_URL=${WISE_URL}
     env_file:
       - .env.local
     labels:
