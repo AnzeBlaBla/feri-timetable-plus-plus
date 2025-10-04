@@ -64,8 +64,6 @@ services:
       # Service configuration - must match the service name in router
       - "traefik.http.services.timetable.loadbalancer.server.port=3000"
       
-      # Security headers middleware
-      - "traefik.http.middlewares.security-headers.headers.sslRedirect=true"
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
