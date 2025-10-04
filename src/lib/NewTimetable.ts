@@ -1,5 +1,5 @@
 import { Branch, GroupBranchMain, LectureWise, Programme, SchoolInfo } from "../types/types"
-import { API_URL, USERNAME, PASSWORD } from "../const"
+import { API_URL, getUsername, getPassword } from "../const"
 import { APICache, APICacheConfig } from "./APICache"
 
 type FetchTokenResponse = {
@@ -57,13 +57,13 @@ export class NewTimetable {
   private async getToken(): Promise<string> {
     return this.cache.request(
       async () => {
-        if (!USERNAME || !PASSWORD) {
-          throw new Error('USERNAME and PASSWORD environment variables must be set')
-        }
+        // Get credentials at runtime, not build time
+        const username = getUsername()
+        const password = getPassword()
         
-        const base64Credentials = Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64')
+        const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64')
 
-        console.log(`Using credentials: ${base64Credentials}`)
+        console.log(`Using credentials for user: ${username}`)
         
         console.log('Fetching fresh authentication token...')
         const response = await fetch(`${API_URL}login`, {
