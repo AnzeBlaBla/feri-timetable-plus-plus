@@ -34,7 +34,6 @@ export function Footer() {
             </p>
           </div>
         </div> */}
-        <hr className="my-3" />
         <div className="row">
           <div className="col-12 text-center">
             <p className="text-muted small mb-0">

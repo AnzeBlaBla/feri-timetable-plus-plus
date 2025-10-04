@@ -9,6 +9,7 @@ import { TimetableCalendar } from './TimetableCalendar';
 import { TimetableControls } from './TimetableControls';
 import { Footer } from './Footer';
 import { Programme } from '@/types/types';
+import { ThemeToggle } from './ThemeToggle';
 
 interface TimetableClientProps {
   programmes: Programme[];
@@ -220,7 +221,7 @@ export function TimetableClient({
                 {/* Top Row: Title and Filter Controls */}
                 <div className="row align-items-center mb-3">
                   <div className="col-md-3">
-                    <a href="/" className="text-decoration-none text-dark">
+                    <a href="/" className="text-decoration-none">
                       <h5 className="mb-0 hover-primary">FERI Timetable++</h5>
                     </a>
                   </div>
@@ -256,6 +257,8 @@ export function TimetableClient({
 
                   <div className="col-md-4">
                     <div className="d-flex align-items-center gap-2 justify-content-md-end position-relative">
+                      <ThemeToggle />
+                      
                       <button
                         className="btn btn-sm btn-outline-info"
                         type="button"
