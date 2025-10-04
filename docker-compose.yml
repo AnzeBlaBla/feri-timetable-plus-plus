@@ -17,6 +17,7 @@ services:
       # HTTP to HTTPS redirect
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       
       # Let's Encrypt configuration
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
@@ -43,29 +44,31 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - WISE_USERNAME=${WISE_USERNAME}
+      - WISE_PASSWORD=${WISE_PASSWORD}
+      - WISE_URL=${WISE_URL:-https://wise.um.si/urnik/2024_2025}
+    env_file:
+      - .env.local
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
       
-      # HTTP router (will redirect to HTTPS)
-      - "traefik.http.routers.timetable-http.rule=Host(`urnik.anzeblag.us`)"
-      - "traefik.http.routers.timetable-http.entrypoints=web"
-      
       # HTTPS router with Let's Encrypt
-      - "traefik.http.routers.timetable-https.rule=Host(`urnik.anzeblag.us`)"
-      - "traefik.http.routers.timetable-https.entrypoints=websecure"
-      - "traefik.http.routers.timetable-https.tls=true"
-      - "traefik.http.routers.timetable-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.timetable.rule=Host(`urnik.anzeblag.us`)"
+      - "traefik.http.routers.timetable.entrypoints=websecure"
+      - "traefik.http.routers.timetable.tls=true"
+      - "traefik.http.routers.timetable.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.timetable.service=timetable"
       
-      # Service configuration
+      # Service configuration - must match the service name in router
       - "traefik.http.services.timetable.loadbalancer.server.port=3000"
       
-      # Security headers
+      # Security headers middleware
       - "traefik.http.middlewares.security-headers.headers.sslRedirect=true"
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
-      - "traefik.http.routers.timetable-https.middlewares=security-headers"
+      - "traefik.http.routers.timetable.middlewares=security-headers"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
