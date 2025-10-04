@@ -7,6 +7,7 @@ import { GroupSelectionModal } from './GroupSelectionModal';
 import { SelectedGroupsBadges } from './SelectedGroupsBadges';
 import { TimetableCalendar } from './TimetableCalendar';
 import { TimetableControls } from './TimetableControls';
+import { Footer } from './Footer';
 import { Programme } from '@/types/types';
 
 interface TimetableClientProps {
@@ -300,6 +301,9 @@ export function TimetableClient({
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Groups Selection Modal */}
       <GroupSelectionModal

@@ -22,6 +22,24 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
   const calendarRef = useRef<any>(null);
   const renderCountRef = useRef<number>(0);
 
+  // Helper function to get shorthand name (first letter of each word)
+  const getShorthandName = (courseName: string): string => {
+    const ignoreWords = ['in', 'iz', 'na', 'za', 'v', 'z', 'a', 'an', 'the', 'of', 'to', 'for', 'with', 'and', 'or'];
+    
+    return courseName
+      .split(' ')
+      .filter(word => word.length > 0) // Filter out empty strings
+      .filter(word => !ignoreWords.includes(word.toLowerCase())) // Filter out ignored words
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+  };
+
+  // Check if device is mobile
+  const isMobile = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  };
+
   // Debug: Log events when they change
   useEffect(() => {
     console.log(`TimetableCalendar received ${events.length} events`);
@@ -52,12 +70,6 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
         const currentDate = calendarApi.getDate();
         console.log('Calendar currently showing:', currentDate.toLocaleDateString());
         console.log('First event is on:', minDate.toLocaleDateString());
-        
-        // If current view doesn't show first event, navigate to first event
-        if (currentDate < minDate) {
-          console.log('Navigating calendar to first event date...');
-          calendarApi.gotoDate(events[0].start);
-        }
       }
     }
     
@@ -197,16 +209,39 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
         calendarApi.changeView('timeGridWeek');
       }
     }
+    
+    // Force re-render of events to update shorthand/full names
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.render();
+    }
   };
 
   const renderEventContent = (eventInfo: any) => {
     const location = eventInfo.event.extendedProps.location;
+    const courseName = eventInfo.event.title;
+    const courseType = eventInfo.event.extendedProps.type;
+    const mobile = isMobile();
+    
+    // Build display name dynamically
+    let displayName: string;
+    if (mobile) {
+      // Mobile: Use shorthand + type in parentheses
+      const shorthand = getShorthandName(courseName);
+      displayName = courseType ? `${shorthand} (${courseType})` : shorthand;
+    } else {
+      // Desktop: Use full name + type in parentheses
+      displayName = courseType ? `${courseName} (${courseType})` : courseName;
+    }
+    
+    // Full name for tooltip (always with type if available)
+    const fullName = courseType ? `${courseName} (${courseType})` : courseName;
     
     return (
       <div className="fc-event-main-frame">
         <div className="fc-event-time">{eventInfo.timeText}</div>
         <div className="fc-event-title-container">
-          <div className="fc-event-title">{eventInfo.event.title}</div>
+          <div className="fc-event-title" title={fullName}>{displayName}</div>
           {location && <div className="fc-event-location">{location}</div>}
         </div>
       </div>
@@ -246,10 +281,10 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
       timeZone="local"
       nowIndicator={true}
       now={() => new Date()}
-      validRange={{
+      /* validRange={{
         start: new Date(new Date().getFullYear(), 8, 1), // September 1st
         end: new Date(new Date().getFullYear() + 1, 8, 30), // August 30th next year
-      }}
+      }} */
       eventTimeFormat={{
         hour: '2-digit',
         minute: '2-digit',
@@ -275,12 +310,12 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
           slotMaxTime: '21:00:00',
         },
       }}
-      businessHours={{
+      /* businessHours={{
         daysOfWeek: [1, 2, 3, 4, 5],
         startTime: '08:00',
         endTime: '20:00',
-      }}
-      weekends={true}
+      }} */
+      weekends={false}
       events={events}
       eventDisplay="block"
       displayEventTime={true}

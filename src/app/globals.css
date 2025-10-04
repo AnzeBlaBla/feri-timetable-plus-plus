@@ -234,6 +234,49 @@ button {
   }
 }
 
+/* Footer Styles */
+.footer {
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #dee2e6;
+  margin-top: 3rem;
+}
+
+.footer h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.footer h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer a {
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.footer a:hover {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.footer .hover-primary:hover {
+  color: #0d6efd;
+}
+
+.footer ul {
+  padding-left: 0;
+}
+
+.footer li {
+  list-style: none;
+}
+
 * {
   box-sizing: border-box;
 }
