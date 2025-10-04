@@ -137,7 +137,8 @@ export class NewTimetable {
       },
       {
         key: `school_url_${this.humanSchoolCode}`,
-        ttl: 60 * 60 * 1000, // Cache for 1 hour (rarely changes)
+        // Cache for a day
+        ttl: 24 * 60 * 60 * 1000,
       }
     )
   }
@@ -168,7 +169,8 @@ export class NewTimetable {
       },
       {
         key: `school_info_${this.humanSchoolCode}`,
-        ttl: 30 * 60 * 1000, // Cache for 30 minutes
+        // Cache for a day
+        ttl: 24 * 60 * 60 * 1000,
       }
     )
   }
@@ -195,7 +197,8 @@ export class NewTimetable {
       },
       {
         key: `programmes_${this.actualSchoolCode}`,
-        ttl: 20 * 60 * 1000, // Cache for 20 minutes
+        // Cache for a day
+        ttl: 24 * 60 * 60 * 1000,
       }
     )
   }
@@ -222,7 +225,8 @@ export class NewTimetable {
       },
       {
         key: `branches_${this.actualSchoolCode}_${programmeId}_${year}`,
-        ttl: 15 * 60 * 1000, // Cache for 15 minutes
+        // Cache for a day
+        ttl: 24 * 60 * 60 * 1000,
       }
     )
   }
@@ -249,7 +253,8 @@ export class NewTimetable {
       },
       {
         key: `groups_${this.actualSchoolCode}_${branchId}`,
-        ttl: 10 * 60 * 1000, // Cache for 10 minutes
+        // Cache for a day
+        ttl: 24 * 60 * 60 * 1000,
       }
     )
   }
@@ -287,7 +292,8 @@ export class NewTimetable {
       },
       {
         key: `lectures_${this.actualSchoolCode}_${groups.map(g => g.id).join('_')}_${startDate.getTime()}_${endDate.getTime()}`,
-        ttl: 5 * 60 * 1000, // Cache lectures for 5 minutes (they can change more frequently)
+        // Cache lectures for 30 minutes (they can change more frequently)
+        ttl: 30 * 60 * 1000,
       }
     )
   }
