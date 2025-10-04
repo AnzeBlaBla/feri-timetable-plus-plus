@@ -232,6 +232,65 @@ button {
   #groupsModal .modal-content {
     background-color: rgba(255, 255, 255, 0.98);
   }
+
+  /* Fix time display in month view on mobile */
+  .fc-daygrid-event .fc-event-time {
+    display: inline-block !important;
+    font-size: 0.7em !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    vertical-align: top !important;
+    margin-right: 2px !important;
+    line-height: 1 !important;
+  }
+
+  .fc-daygrid-event .fc-event-title {
+    display: inline !important;
+    font-size: 0.8em !important;
+    line-height: 1.1 !important;
+  }
+
+  .fc-daygrid-event .fc-event-main-frame {
+    display: block !important;
+    white-space: normal !important;
+    padding: 1px 2px !important;
+    line-height: 1.1 !important;
+  }
+
+  /* For dot events in month view */
+  .fc-daygrid-dot-event .fc-event-time {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+
+  /* Hide time display in week/day view on mobile */
+  .fc-timegrid-event .fc-event-time {
+    display: none !important;
+  }
+
+  .fc-timegrid-event .fc-event-title {
+    display: block !important;
+    font-size: 0.75em !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
+  }
+
+  .fc-timegrid-event .fc-event-main-frame {
+    padding: 2px 2px 1px 2px !important;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .fc-timegrid-event-harness {
+    overflow: visible !important;
+  }
+
+  .fc-timegrid-event {
+    overflow: visible !important;
+  }
 }
 
 /* Footer Styles */
