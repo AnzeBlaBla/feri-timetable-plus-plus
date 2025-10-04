@@ -44,11 +44,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - WISE_USERNAME=${WISE_USERNAME}
-      - WISE_PASSWORD=${WISE_PASSWORD}
-      - WISE_URL=${WISE_URL:-https://wise.um.si/urnik/2024_2025}
-    env_file:
-      - .env.local
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
