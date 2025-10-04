@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d6efd;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a58ca;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="100" height="100" fill="url(#grad)" rx="20"/>
+  
+  <!-- Calendar icon - larger with less spacing -->
+  <rect x="8" y="15" width="84" height="70" fill="white" rx="6"/>
+  
+  <!-- Calendar header bar -->
+  <rect x="8" y="15" width="84" height="16" fill="#0a58ca" rx="6"/>
+  <rect x="8" y="24" width="84" height="7" fill="#0a58ca"/>
+  
+  <!-- Calendar binding rings -->
+  <rect x="22" y="8" width="6" height="14" fill="white" rx="3"/>
+  <rect x="72" y="8" width="6" height="14" fill="white" rx="3"/>
+  
+  <!-- Calendar grid dots -->
+  <circle cx="22" cy="44" r="3.5" fill="#0d6efd"/>
+  <circle cx="38" cy="44" r="3.5" fill="#0d6efd"/>
+  <circle cx="54" cy="44" r="3.5" fill="#0d6efd"/>
+  <circle cx="70" cy="44" r="3.5" fill="#0d6efd"/>
+  
+  <circle cx="22" cy="58" r="3.5" fill="#0d6efd"/>
+  <circle cx="38" cy="58" r="3.5" fill="#dc3545"/>
+  <circle cx="54" cy="58" r="3.5" fill="#0d6efd"/>
+  <circle cx="70" cy="58" r="3.5" fill="#0d6efd"/>
+  
+  <circle cx="22" cy="72" r="3.5" fill="#0d6efd"/>
+  <circle cx="38" cy="72" r="3.5" fill="#0d6efd"/>
+  <circle cx="54" cy="72" r="3.5" fill="#0d6efd"/>
+  
+  <!-- Massive Red Plus Plus (++) overlay - dominates when small -->
+  <text x="50" y="62" font-family="Arial, sans-serif" font-size="80" font-weight="900" fill="#dc3545" text-anchor="middle" dominant-baseline="middle" style="text-shadow: 3px 3px 6px rgba(0,0,0,0.4)">++</text>
+</svg>

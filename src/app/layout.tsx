@@ -6,6 +6,15 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'FERI Timetable++',
   description: 'A better FERI UM timetable.',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 export default function RootLayout({
