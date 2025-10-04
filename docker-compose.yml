@@ -43,8 +43,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-    env_file:
-      - .env.local
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
