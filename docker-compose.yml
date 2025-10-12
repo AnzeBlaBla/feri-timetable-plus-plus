@@ -62,7 +62,7 @@ services:
       - "traefik.http.routers.timetable.service=timetable"
       
       # Service configuration - must match the service name in router
-      - "traefik.http.services.timetable.loadbalancer.server.port=3000"
+      - "traefik.http.services.timetable.loadbalancer.server.port=80"
       
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
