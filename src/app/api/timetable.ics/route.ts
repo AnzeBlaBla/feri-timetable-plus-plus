@@ -16,25 +16,8 @@ function formatDate(dateStr: string): string {
     return '';
   }
   
-  // Use Intl.DateTimeFormat to properly convert to Ljubljana timezone
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Ljubljana',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-  
-  const parts = formatter.formatToParts(date);
-  const partMap: Record<string, string> = {};
-  parts.forEach(part => {
-    partMap[part.type] = part.value;
-  });
-  
-  return `${partMap.year}${partMap.month}${partMap.day}T${partMap.hour}${partMap.minute}${partMap.second}`;
+  // Format as UTC with Z suffix
+  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
 function escapeICSText(text: string): string {
@@ -55,26 +38,6 @@ function generateICS(lectures: LectureWise[], programmeId: string, year: string)
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:FERI Timetable - ${programmeId} Year ${year}`,
-    'X-WR-TIMEZONE:Europe/Ljubljana',
-    '',
-    // Add timezone definition for Europe/Ljubljana
-    'BEGIN:VTIMEZONE',
-    'TZID:Europe/Ljubljana',
-    'BEGIN:DAYLIGHT',
-    'TZOFFSETFROM:+0100',
-    'TZOFFSETTO:+0200',
-    'TZNAME:CEST',
-    'DTSTART:19700329T020000',
-    'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
-    'END:DAYLIGHT',
-    'BEGIN:STANDARD',
-    'TZOFFSETFROM:+0200',
-    'TZOFFSETTO:+0100',
-    'TZNAME:CET',
-    'DTSTART:19701025T030000',
-    'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
-    'END:STANDARD',
-    'END:VTIMEZONE',
   ];
 
 
@@ -133,8 +96,8 @@ function generateICS(lectures: LectureWise[], programmeId: string, year: string)
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
-      `DTSTART;TZID=Europe/Ljubljana:${dtstart}`,
-      `DTEND;TZID=Europe/Ljubljana:${dtend}`,
+      `DTSTART:${dtstart}`,
+      `DTEND:${dtend}`,
       `SUMMARY:${summary}`,
     ];
     
@@ -151,7 +114,7 @@ function generateICS(lectures: LectureWise[], programmeId: string, year: string)
       'SEQUENCE:0',
       'END:VEVENT'
     );
-    
+
     // Add all event lines to the main lines array
     lines.push(...eventLines);
     validEvents++;
