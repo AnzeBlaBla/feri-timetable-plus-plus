@@ -82,7 +82,8 @@ function generateICS(lectures: LectureWise[], programmeId: string, year: string)
   let skippedEvents = 0;
 
   lectures.forEach((lecture, index) => {
-    const uid = `${lecture.id}@feri-timetable-plus-plus`;
+    // Create a truly unique UID by combining multiple identifiers
+    const uid = `${lecture.id}-${lecture.start_time}-${lecture.end_time}@feri-timetable-plus-plus`;
     const dtstart = formatDate(lecture.start_time);
     const dtend = formatDate(lecture.end_time);
     
