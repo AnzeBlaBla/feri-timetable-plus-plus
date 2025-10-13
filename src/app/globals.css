@@ -317,24 +317,11 @@ button {
 
 /* Current time indicator - red line and arrow */
 .fc-timegrid-now-indicator-line {
-  border-color: #dc3545 !important;
-  border-width: 2px !important;
-  border-style: solid !important;
-  pointer-events: none !important; /* Allow clicks to pass through */
+  border-width: 1px !important;
 }
 
-.fc-timegrid-now-indicator-arrow {
-  border-color: #dc3545 !important;
-  border-width: 8px !important;
-  border-top-color: transparent !important;
-  border-bottom-color: transparent !important;
-  pointer-events: none !important; /* Allow clicks to pass through */
-}
 
-.fc-timegrid-now-indicator-container {
-  z-index: 1 !important; /* Lower than events but above background */
-  pointer-events: none !important; /* Allow clicks to pass through */
-}
+
 
 /* Make sure events are above the now indicator */
 .fc-event {

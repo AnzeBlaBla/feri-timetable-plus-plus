@@ -33,14 +33,17 @@ export async function fetchTimetableData(
     allGroups.push(...groupsWithBranch);
   }
 
-  // Get timetable data for all groups (6 months back and 6 months ahead)
+  // Get timetable data for all groups (1 full academic year)
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   
-  const startDate = new Date(now);
-  startDate.setMonth(now.getMonth() - 6);
-  const endDate = new Date(now);
-  endDate.setMonth(now.getMonth() + 6);
+  // Start from beginning of academic year (September 1st of current or previous year)
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-based
+  const academicYearStart = currentMonth >= 8 ? currentYear : currentYear - 1; // September = month 8
+  
+  const startDate = new Date(academicYearStart, 8, 1); // September 1st
+  const endDate = new Date(academicYearStart + 1, 7, 31); // August 31st next year
   
   const lectures = await timetable.getLecturesForGroups(
     allGroups.map(g => ({ id: g.id })),
