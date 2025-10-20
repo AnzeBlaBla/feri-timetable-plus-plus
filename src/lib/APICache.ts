@@ -6,18 +6,21 @@ interface CacheEntry {
   data: any
   timestamp: number
   expiresAt: number
+  fallbackExpiresAt?: number // Optional extended expiry for fallback usage
 }
 
 export interface APICacheConfig {
   defaultTTLMs?: number
   maxEntries?: number
   cleanupIntervalMs?: number
+  fallbackTTLMs?: number // How long to keep expired data for fallback (default: 7 days)
 }
 
 export interface CacheOptions {
   ttl?: number
   key?: string
   skipCache?: boolean
+  useFallback?: boolean // Whether to use expired cache as fallback when request fails
 }
 
 export class APICache {
@@ -30,6 +33,7 @@ export class APICache {
       defaultTTLMs: config.defaultTTLMs ?? 30 * 60 * 1000, // 30 minutes default
       maxEntries: config.maxEntries ?? 1000, // Prevent memory leaks
       cleanupIntervalMs: config.cleanupIntervalMs ?? 5 * 60 * 1000, // Cleanup every 5 minutes
+      fallbackTTLMs: config.fallbackTTLMs ?? 7 * 24 * 60 * 60 * 1000, // 7 days default for fallback data
     }
 
     // Start periodic cleanup
@@ -43,7 +47,12 @@ export class APICache {
     requestFn: () => Promise<T>,
     options: CacheOptions = {}
   ): Promise<T> {
-    const { ttl = this.config.defaultTTLMs, key, skipCache = false } = options
+    const { 
+      ttl = this.config.defaultTTLMs, 
+      key, 
+      skipCache = false, 
+      useFallback = true 
+    } = options
 
     // Generate cache key if not provided
     const cacheKey = key ?? this.generateKey(requestFn.toString())
@@ -56,15 +65,29 @@ export class APICache {
       }
     }
 
-    // Execute the request
-    const result = await requestFn()
+    try {
+      // Execute the request
+      const result = await requestFn()
 
-    // Cache the result if not skipping cache
-    if (!skipCache) {
-      this.set(cacheKey, result, ttl)
+      // Cache the result if not skipping cache
+      if (!skipCache) {
+        this.set(cacheKey, result, ttl)
+      }
+
+      return result
+    } catch (error) {
+      // If request fails and fallback is enabled, try to return expired cached data
+      if (useFallback && !skipCache) {
+        const fallbackData = this.getFallback<T>(cacheKey)
+        if (fallbackData !== null) {
+          console.warn(`APICache: Backend failed, returning fallback data for key: ${cacheKey}`, error)
+          return fallbackData
+        }
+      }
+      
+      // No fallback available, re-throw the original error
+      throw error
     }
-
-    return result
   }
 
   /**
@@ -81,6 +104,21 @@ export class APICache {
     }
 
     return entry.data
+  }
+
+  /**
+   * Get cached data by key, including expired entries (for fallback)
+   */
+  getFallback<T>(key: string): T | null {
+    const entry = this.cache.get(key)
+    if (!entry) return null
+    
+    // Check if fallback data is still valid
+    if (entry.fallbackExpiresAt && Date.now() > entry.fallbackExpiresAt) {
+      return null
+    }
+    
+    return entry.data // Return data even if normally expired
   }
 
   /**
@@ -102,6 +140,7 @@ export class APICache {
       data,
       timestamp: now,
       expiresAt: now + ttl,
+      fallbackExpiresAt: now + this.config.fallbackTTLMs,
     })
   }
 
@@ -133,22 +172,40 @@ export class APICache {
     size: number
     maxEntries: number
     defaultTTLMs: number
-    entries: Array<{ key: string; timestamp: number; expiresAt: number; expired: boolean }>
+    fallbackTTLMs: number
+    entries: Array<{ 
+      key: string; 
+      timestamp: number; 
+      expiresAt: number; 
+      fallbackExpiresAt?: number;
+      expired: boolean;
+      fallbackOnly: boolean;
+    }>
   } {
     const now = Date.now()
     const entries = Array.from(this.cache.entries()).map(([key, entry]) => ({
       key,
       timestamp: entry.timestamp,
       expiresAt: entry.expiresAt,
+      fallbackExpiresAt: entry.fallbackExpiresAt,
       expired: now > entry.expiresAt,
+      fallbackOnly: Boolean(now > entry.expiresAt && entry.fallbackExpiresAt && now <= entry.fallbackExpiresAt),
     }))
 
     return {
       size: this.cache.size,
       maxEntries: this.config.maxEntries,
       defaultTTLMs: this.config.defaultTTLMs,
+      fallbackTTLMs: this.config.fallbackTTLMs,
       entries,
     }
+  }
+
+  /**
+   * Check if a key exists as fallback data (expired but still usable for fallback)
+   */
+  hasFallback(key: string): boolean {
+    return this.getFallback(key) !== null
   }
 
   /**
@@ -174,7 +231,7 @@ export class APICache {
       }
       
       return await response.text()
-    }, { ...options, key: cacheKey })
+    }, { useFallback: true, ...options, key: cacheKey })
   }
 
   /**
@@ -215,14 +272,16 @@ export class APICache {
   }
 
   /**
-   * Clean up expired entries
+   * Clean up expired entries (only remove entries that are past fallback expiry)
    */
   private cleanup(): void {
     const now = Date.now()
     const expiredKeys: string[] = []
 
     for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expiresAt) {
+      // Only delete if past fallback expiry, or if no fallback expiry is set and past regular expiry
+      const fallbackExpiry = entry.fallbackExpiresAt ?? entry.expiresAt
+      if (now > fallbackExpiry) {
         expiredKeys.push(key)
       }
     }
@@ -230,7 +289,7 @@ export class APICache {
     expiredKeys.forEach(key => this.cache.delete(key))
     
     if (expiredKeys.length > 0) {
-      console.log(`APICache: Cleaned up ${expiredKeys.length} expired entries`)
+      console.log(`APICache: Cleaned up ${expiredKeys.length} fully expired entries`)
     }
   }
 
@@ -257,4 +316,39 @@ export class APICache {
 }
 
 // Export a default instance for convenience
-export const defaultAPICache = new APICache()
+export const defaultAPICache = new APICache({
+  defaultTTLMs: 30 * 60 * 1000, // 30 minutes
+  fallbackTTLMs: 7 * 24 * 60 * 60 * 1000, // 7 days fallback
+})
+
+/*
+Usage Example with Fallback:
+
+// Basic usage - will automatically use fallback if backend fails
+const data = await cache.cachedFetch('https://api.example.com/data')
+
+// Custom options with fallback
+const data = await cache.request(
+  () => fetch('https://api.example.com/data').then(r => r.json()),
+  { 
+    ttl: 5 * 60 * 1000, // 5 minutes fresh
+    useFallback: true, // Use expired data if backend fails (default: true)
+    key: 'my-custom-key'
+  }
+)
+
+// Disable fallback for critical operations
+const data = await cache.request(
+  () => criticalApiCall(),
+  { useFallback: false } // Will throw error if backend fails, no fallback
+)
+
+// Check if fallback data is available
+if (cache.hasFallback('my-key')) {
+  console.log('Fallback data available for my-key')
+}
+
+// Get cache statistics including fallback info
+const stats = cache.getStats()
+console.log(`Cache has ${stats.entries.filter(e => e.fallbackOnly).length} fallback-only entries`)
+*/
