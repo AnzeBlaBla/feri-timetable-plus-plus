@@ -30,23 +30,10 @@ export default async function Home() {
                 </p>
 
                 <div className="alert alert-danger" role="alert">
-                  <h5 className="alert-heading">Configuration Error</h5>
-                  <p className="mb-3">
-                    Failed to load programmes. Please ensure environment variables are configured.
+                  <h5 className="alert-heading">Service Unavailable</h5>
+                  <p className="mb-0">
+                    We're experiencing technical difficulties. Please try again later.
                   </p>
-                  <hr />
-                  <details>
-                    <summary className="mb-2" style={{ cursor: 'pointer' }}>Error details</summary>
-                    <pre className="small bg-light p-2 rounded">{error}</pre>
-                  </details>
-                  <div className="mt-3">
-                    <p className="fw-bold mb-2">To fix this issue:</p>
-                    <ol className="small">
-                      <li>Copy <code>.env.example</code> to <code>.env.local</code></li>
-                      <li>Add your WTT_USERNAME and WTT_PASSWORD credentials</li>
-                      <li>Restart the development server</li>
-                    </ol>
-                  </div>
                 </div>
               </div>
             </div>
