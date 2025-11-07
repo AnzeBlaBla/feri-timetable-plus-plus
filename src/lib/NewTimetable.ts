@@ -12,6 +12,7 @@ type FetchSchoolUrlResponse = {
 
 export interface NewTimetableConfig extends APICacheConfig {
   tokenExpirationBufferMs?: number
+  fallbackTTLMs?: number // How long to keep cached data for fallback when backend is down
 }
 
 export class NewTimetable {
@@ -32,11 +33,12 @@ export class NewTimetable {
       cleanupIntervalMs: config.cleanupIntervalMs ?? 5 * 60 * 1000,
     }
 
-    // Create API cache instance with custom configuration
+    // Create API cache instance with custom configuration for timetable data
     this.cache = new APICache({
       defaultTTLMs: this.config.defaultTTLMs,
       maxEntries: this.config.maxEntries,
       cleanupIntervalMs: this.config.cleanupIntervalMs,
+      fallbackTTLMs: config.fallbackTTLMs ?? 30 * 24 * 60 * 60 * 1000, // 30 days fallback for timetable data
     })
 
     // Initialize by getting school info
@@ -52,7 +54,7 @@ export class NewTimetable {
   }
 
   /**
-   * Get authentication token with caching
+   * Get authentication token with caching and fallback support
    */
   private async getToken(): Promise<string> {
     return this.cache.request(
@@ -85,39 +87,47 @@ export class NewTimetable {
       {
         key: 'auth_token',
         ttl: 25 * 60 * 1000, // Cache token for 25 minutes (JWT usually expires in 30min)
+        useFallback: true, // Allow using expired tokens if backend is down
       }
     )
   }
 
   /**
-   * Make authenticated API request with automatic token handling
+   * Make authenticated API request with automatic token handling and fallback support
    */
   private async authenticatedRequest<T>(url: string): Promise<T> {
-    const token = await this.getToken()
-    
-    console.log(`Making authenticated request to: ${url}`)
-    
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`API Error - Status: ${response.status} ${response.statusText}`)
-      console.error(`URL: ${url}`)
-      console.error(`Response: ${errorText}`)
-      throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorText}`)
-    }
-
-    const responseText = await response.text()
     try {
-      return JSON.parse(responseText) as T
-    } catch (parseError) {
-      console.error(`JSON Parse Error for URL: ${url}`)
-      console.error(`Response text: ${responseText}`)
-      throw new Error(`Invalid JSON response: ${parseError}`)
+      const token = await this.getToken()
+      
+      console.log(`Making authenticated request to: ${url}`)
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`API Error - Status: ${response.status} ${response.statusText}`)
+        console.error(`URL: ${url}`)
+        console.error(`Response: ${errorText}`)
+        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorText}`)
+      }
+
+      const responseText = await response.text()
+      try {
+        return JSON.parse(responseText) as T
+      } catch (parseError) {
+        console.error(`JSON Parse Error for URL: ${url}`)
+        console.error(`Response text: ${responseText}`)
+        throw new Error(`Invalid JSON response: ${parseError}`)
+      }
+    } catch (error) {
+      // If token fetch fails or API is down, the cache.request() calls in other methods
+      // will automatically fall back to cached data if useFallback: true is set
+      console.error(`Authenticated request failed for ${url}:`, error)
+      throw error
     }
   }
 
@@ -139,6 +149,7 @@ export class NewTimetable {
         key: `school_url_${this.humanSchoolCode}`,
         // Cache for a day
         ttl: 24 * 60 * 60 * 1000,
+        useFallback: true, // Use cached URL if backend is down
       }
     )
   }
@@ -171,6 +182,7 @@ export class NewTimetable {
         key: `school_info_${this.humanSchoolCode}`,
         // Cache for a day
         ttl: 24 * 60 * 60 * 1000,
+        useFallback: true, // Use cached school info if backend is down
       }
     )
   }
@@ -199,6 +211,7 @@ export class NewTimetable {
         key: `programmes_${this.actualSchoolCode}`,
         // Cache for a day
         ttl: 24 * 60 * 60 * 1000,
+        useFallback: true, // Use cached programmes if backend is down
       }
     )
   }
@@ -227,6 +240,7 @@ export class NewTimetable {
         key: `branches_${this.actualSchoolCode}_${programmeId}_${year}`,
         // Cache for a day
         ttl: 24 * 60 * 60 * 1000,
+        useFallback: true, // Use cached branches if backend is down
       }
     )
   }
@@ -255,6 +269,7 @@ export class NewTimetable {
         key: `groups_${this.actualSchoolCode}_${branchId}`,
         // Cache for a day
         ttl: 24 * 60 * 60 * 1000,
+        useFallback: true, // Use cached groups if backend is down
       }
     )
   }
@@ -294,6 +309,7 @@ export class NewTimetable {
         key: `lectures_${this.actualSchoolCode}_${groups.map(g => g.id).join('_')}_${startDate.getTime()}_${endDate.getTime()}`,
         // Cache lectures for 30 minutes (they can change more frequently)
         ttl: 30 * 60 * 1000,
+        useFallback: true, // Use cached lectures if backend is down - MOST IMPORTANT!
       }
     )
   }
