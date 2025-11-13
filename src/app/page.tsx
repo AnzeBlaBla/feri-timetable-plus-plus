@@ -1,6 +1,7 @@
 import { getProgrammes } from '@/lib/timetable-server';
 import { ProgrammeSelectionForm } from '@/components/ProgrammeSelectionForm';
 import { Programme } from '@/types/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default async function Home() {
   let programmes: Programme[] = [];
@@ -13,6 +14,9 @@ export default async function Home() {
     console.error('Failed to fetch programmes:', e);
     error = e instanceof Error ? e.message : 'Failed to load programmes';
     programmes = [];
+    
+    // Disable caching when there's an error to ensure fresh retries
+    noStore();
   }
 
   if (error) {
