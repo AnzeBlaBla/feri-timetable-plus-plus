@@ -36,6 +36,18 @@ WTT_USERNAME=your_username_here
 WTT_PASSWORD=your_password_here
 ```
 
+For local Next.js development, use `.env.local`; escape literal `$` characters there with a backslash. For Docker, place the credentials in the project-root `.env` beside `docker-compose.yml`; Docker uses this same file for both the static build and the running container. Wrap values containing `$` in single quotes and do not add a backslash, for example `WTT_PASSWORD='part$with$dollars'`. The file is available only to the server-side build and container; do not expose these values through `NEXT_PUBLIC_*` variables.
+
+## Deployment
+
+Deploy from the branch you intend to serve:
+
+```bash
+./deploy.sh
+```
+
+The deployment script pulls the current branch, pulls Traefik, rebuilds the application, and recreates the services.
+
 ## Development
 
 ```bash
@@ -82,5 +94,3 @@ All dates use `YYYY-MM-DD`; schedule times and week boundaries use the `Europe/L
 npm test
 npm run build
 ```
-
-

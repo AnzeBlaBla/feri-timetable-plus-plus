@@ -20,10 +20,8 @@ coverage
 # Debug
 *.log
 
-# Local env files
-.env*.local
-.env.development
-.env.test
+# Next.js uses the project-root .env during the Docker build.
+.env.*
 
 # Git
 .git

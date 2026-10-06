@@ -1,4 +1,7 @@
 #!/bin/bash
 
-git pull origin main
-docker compose up -d --build
+set -e
+
+git pull --ff-only
+docker compose pull traefik
+docker compose up -d --build --force-recreate
