@@ -10,6 +10,7 @@ import { TimetableControls } from './TimetableControls';
 import { Footer } from './Footer';
 import { Programme } from '@/types/types';
 import { ThemeToggle } from './ThemeToggle';
+import { McpConnectionModal } from './McpConnectionModal';
 
 interface TimetableClientProps {
   programmes: Programme[];
@@ -258,6 +259,12 @@ export function TimetableClient({
                   <div className="col-md-4">
                     <div className="d-flex align-items-center gap-2 justify-content-md-end position-relative">
                       <ThemeToggle />
+                      <McpConnectionModal
+                        programmeId={programmeId}
+                        year={year}
+                        branches={branches}
+                        selectedGroups={selectedGroups}
+                      />
                       
                       <button
                         className="btn btn-sm btn-outline-info"

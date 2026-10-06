@@ -1,5 +1,5 @@
 import { Branch, GroupBranchMain, LectureWise, Programme, SchoolInfo } from "../types/types"
-import { API_URL, USERNAME, PASSWORD } from "../const"
+import { API_URL, getPassword, getUsername } from "./timetable-config"
 
 type FetchTokenResponse = {
   token: string
@@ -60,11 +60,9 @@ export class Timetable {
   }
 
   private async fetchToken(): Promise<string> {
-    if (!USERNAME || !PASSWORD) {
-      throw new Error('USERNAME and PASSWORD environment variables must be set')
-    }
-    
-    const base64Credentials = Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64')
+    const username = getUsername()
+    const password = getPassword()
+    const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64')
 
     
     const response = await fetch(`${API_URL}login`, {

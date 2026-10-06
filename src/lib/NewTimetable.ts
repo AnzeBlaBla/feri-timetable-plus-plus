@@ -1,5 +1,5 @@
 import { Branch, GroupBranchMain, LectureWise, Programme, SchoolInfo } from "../types/types"
-import { API_URL, getUsername, getPassword } from "../const"
+import { API_URL, getUsername, getPassword } from "./timetable-config"
 import { APICache, APICacheConfig } from "./APICache"
 
 type FetchTokenResponse = {
@@ -65,8 +65,6 @@ export class NewTimetable {
         
         const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64')
 
-        console.log(`Using credentials for user: ${username}`)
-        
         console.log('Fetching fresh authentication token...')
         const response = await fetch(`${API_URL}login`, {
           headers: {
