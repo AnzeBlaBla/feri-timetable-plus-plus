@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { SelectedGroups } from '@/types/timetable';
 
 interface McpConnectionModalProps {
@@ -22,6 +22,7 @@ export function McpConnectionModal({
   branches,
   selectedGroups,
 }: McpConnectionModalProps) {
+  const titleId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [copyMessage, setCopyMessage] = useState('');
 
@@ -83,13 +84,13 @@ export function McpConnectionModal({
           className="modal d-block"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="mcpConnectionTitle"
+          aria-labelledby={titleId}
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1060 }}
         >
           <div className="modal-dialog modal-lg modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title" id="mcpConnectionTitle">
+                <h5 className="modal-title" id={titleId}>
                   Connect this timetable to an MCP client
                 </h5>
                 <button

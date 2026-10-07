@@ -1,10 +1,12 @@
 import { LectureWise, Programme, Branch } from './types';
 
 export interface TimetableSearchParams {
-  programme: string;
-  year: string;
+  programme?: string;
+  year?: string;
   branches?: string;
   groups?: string; // base64url encoded JSON
+  timetables?: string;
+  colorMode?: 'course' | 'timetable';
 }
 
 export interface CourseGroups {
@@ -29,7 +31,28 @@ export interface CalendarEvent {
     group: string;
     persons?: string;
     location?: string;
+    timetableId?: string;
+    timetableLabel?: string;
+    timetables?: { id: string; label: string; color: string }[];
   };
+}
+
+export interface TimetableSelection {
+  id: string;
+  programmeId: string;
+  year: string;
+  branches: string;
+  selectedGroups: SelectedGroups;
+  label: string;
+  color: string;
+}
+
+export interface TimetableSelectionData extends TimetableSelection {
+  courses: string[];
+  courseGroups: CourseGroups;
+  events: CalendarEvent[];
+  isUpdating?: boolean;
+  error?: string;
 }
 
 export interface TimetableData {

@@ -7,9 +7,13 @@ node_modules
 
 # Next.js
 .next
+.next-dev
 out
 *.tsbuildinfo
 next-env.d.ts
 
 # API Cache (disk persistence)
 **/feri-timetable-cache/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
