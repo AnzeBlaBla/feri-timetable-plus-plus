@@ -483,11 +483,28 @@ button {
     margin-top: 2px !important;
   }
 
+  .fc-timegrid-event .fc-event-type,
+  .fc-daygrid-event .fc-event-type {
+    display: none !important;
+  }
+
+  .fc-timeGridDay-view .fc-timegrid-event .fc-event-type {
+    display: inline !important;
+  }
+
   .fc-timegrid-event .fc-event-location {
-    /* Location can be hidden on mobile when space is limited */
+    display: none !important;
+  }
+
+  .fc-timeGridDay-view .fc-timegrid-event .fc-event-location {
+    display: block !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
+  }
+
+  .fc-event-owner-stripes {
+    width: 5px;
   }
 
   .fc-timegrid-event .fc-event-main-frame {
@@ -495,6 +512,11 @@ button {
     white-space: normal !important;
     display: flex !important;
     flex-direction: column !important;
+  }
+
+  .fc-timegrid-event .fc-event-main-frame.fc-event-shared,
+  .fc-daygrid-event .fc-event-main-frame.fc-event-shared {
+    padding-left: 10px !important;
   }
 
   .fc-timegrid-event-harness {

@@ -122,10 +122,11 @@ async function main() {
   await click(findButton('Add timetable'));
   assert.ok(findButton('Highlight free time'), 'Free-time control appears when a second timetable is added');
   await click(findButton('Add timetable'));
-  assert.equal(selection().length, 3);
-  assert.equal(groupSummaries().length, 3, 'All three timetables show their groups, not only the active one');
-  assert.ok(findButton('Add timetable').disabled, 'Maximum is three timetables');
-  assert.equal(new Set(selection().map(entry => entry.color)).size, 3);
+  await click(findButton('Add timetable'));
+  assert.equal(selection().length, 4);
+  assert.equal(groupSummaries().length, 4, 'All four timetables show their groups, not only the active one');
+  assert.ok(findButton('Add timetable').disabled, 'Maximum is four timetables');
+  assert.equal(new Set(selection().map(entry => entry.color)).size, 4);
 
   const friendId = selection()[1].id;
   await change(document.getElementById(`programme-${friendId}`), 'ipt');
@@ -184,7 +185,7 @@ async function main() {
   await click(findButton('Subscribe to calendar'));
   assert.ok(document.getElementById('calendar-subscription').textContent.includes('not a file import'));
   await click(findButton('Copy subscription URL'));
-  assert.equal(parseTimetablesParam(new URL(copiedUrl).searchParams.get('timetables')).length, 3);
+  assert.equal(parseTimetablesParam(new URL(copiedUrl).searchParams.get('timetables')).length, 4);
   assert.equal(new URL(copiedUrl).searchParams.has('download'), false);
   assert.equal(document.getElementById('calendar-subscription-url').value, copiedUrl);
   assert.ok([...document.querySelectorAll('a')].find(link => link.textContent === 'Open in calendar app').href.startsWith('webcal:'));
@@ -200,7 +201,7 @@ async function main() {
   assert.deepEqual(selection(), savedSelection, 'Hiding keeps programmes, groups, colors, and shared URLs');
   assert.equal(friendRow.querySelector('[aria-label^="Groups for "] .badge').title, 'ipt-2: G2');
   await click(findButton('Copy subscription URL'));
-  assert.equal(parseTimetablesParam(new URL(copiedUrl).searchParams.get('timetables')).length, 3, 'Subscriptions include temporarily hidden timetables');
+  assert.equal(parseTimetablesParam(new URL(copiedUrl).searchParams.get('timetables')).length, 4, 'Subscriptions include temporarily hidden timetables');
   await click(document.querySelector('[aria-label="Show Friend"]'));
   assert.equal([...document.querySelectorAll('.fc-timegrid-event')].filter(event => event.textContent.includes('ipt-2')).length, 1);
   const foregroundCount = document.querySelectorAll('.fc-timegrid-event').length;

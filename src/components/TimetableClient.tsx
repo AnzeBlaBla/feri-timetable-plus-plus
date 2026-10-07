@@ -21,7 +21,7 @@ interface TimetableClientProps {
 
 const COLOR_PRESETS = [
   ['Green', TIMETABLE_COLORS[0]], ['Red', TIMETABLE_COLORS[1]], ['Blue', TIMETABLE_COLORS[2]],
-  ['Purple', '#6f42c1'], ['Orange', '#fd7e14'], ['Yellow', '#ffc107'],
+  ['Purple', TIMETABLE_COLORS[3]], ['Orange', '#fd7e14'], ['Yellow', '#ffc107'],
   ['Teal', '#20c997'], ['Pink', '#d63384'], ['Gray', '#6c757d'],
 ] as const;
 
@@ -158,7 +158,7 @@ export function TimetableClient({ programmes, initialTimetables, initialColorMod
   };
 
   const addTimetable = () => {
-    if (entries.length >= 3) return;
+    if (entries.length >= 4) return;
     const firstProgramme = programmes[0];
     if (!firstProgramme) return;
     const entry: TimetableSelectionData = {
@@ -494,8 +494,8 @@ export function TimetableClient({ programmes, initialTimetables, initialColorMod
                     );
                   })}
                   <div className="col-12 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <button className="btn btn-sm btn-outline-success" type="button" onClick={addTimetable} disabled={entries.length >= 3}>
-                      <i className="bi bi-plus-lg"></i>{' '}Add timetable ({entries.length}/3)
+                    <button className="btn btn-sm btn-outline-success" type="button" onClick={addTimetable} disabled={entries.length >= 4}>
+                      <i className="bi bi-plus-lg"></i>{' '}Add timetable ({entries.length}/4)
                     </button>
                   </div>
                 </div>

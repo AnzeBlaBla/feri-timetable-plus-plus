@@ -1,7 +1,7 @@
 import type { Programme } from '@/types/types';
 import type { CalendarEvent, SelectedGroups, TimetableSelection } from '@/types/timetable';
 
-export const TIMETABLE_COLORS = ['#198754', '#dc3545', '#0d6efd'] as const;
+export const TIMETABLE_COLORS = ['#198754', '#dc3545', '#0d6efd', '#6f42c1'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -26,8 +26,8 @@ export function parseTimetablesParam(value: string): TimetableSelection[] {
     throw new Error('The shared timetable selection is invalid.');
   }
 
-  if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > 3) {
-    throw new Error('Choose between one and three timetables.');
+  if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > 4) {
+    throw new Error('Choose between one and four timetables.');
   }
 
   const ids = new Set<string>();

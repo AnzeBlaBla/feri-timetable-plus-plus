@@ -47,24 +47,6 @@ export function TimetableCalendar({ events, showCommonFreeTime = false }: Timeta
   };
   const escapeHTML = (value: string): string => value.replace(/[&<>"']/g, character => htmlEntities[character]);
 
-  // Helper function to get shorthand name (first letter of each word)
-  const getShorthandName = (courseName: string): string => {
-    const ignoreWords = ['in', 'iz', 'na', 'za', 'v', 'z', 'a', 'an', 'the', 'of', 'to', 'for', 'with', 'and', 'or'];
-    
-    return courseName
-      .split(' ')
-      .filter(word => word.length > 0) // Filter out empty strings
-      .filter(word => !ignoreWords.includes(word.toLowerCase())) // Filter out ignored words
-      .map(word => word.charAt(0).toUpperCase())
-      .join('');
-  };
-
-  // Check if device is mobile
-  const isMobile = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 768;
-  };
-
   // Debug: Log events when they change
   useEffect(() => {
     console.log(`TimetableCalendar received ${events.length} events`);
@@ -262,19 +244,6 @@ export function TimetableCalendar({ events, showCommonFreeTime = false }: Timeta
     const courseName = eventInfo.event.title;
     const courseType = eventInfo.event.extendedProps.type;
     const owners = eventInfo.event.extendedProps.timetables || [];
-    const mobile = isMobile();
-    
-    // Build display name dynamically
-    let displayName: string;
-    if (mobile) {
-      // Mobile: Use shorthand + type in parentheses
-      const shorthand = getShorthandName(courseName);
-      displayName = courseType ? `${shorthand} (${courseType})` : shorthand;
-    } else {
-      // Desktop: Use full name + type in parentheses
-      displayName = courseType ? `${courseName} (${courseType})` : courseName;
-    }
-    
     // Full name for tooltip (always with type if available)
     const fullName = courseType ? `${courseName} (${courseType})` : courseName;
     
@@ -290,7 +259,9 @@ export function TimetableCalendar({ events, showCommonFreeTime = false }: Timeta
         />}
         <div className="fc-event-time">{eventInfo.timeText}</div>
         <div className="fc-event-title-container">
-          <div className="fc-event-title" title={fullName}>{displayName}</div>
+          <div className="fc-event-title" title={fullName} aria-label={fullName}>
+            {courseName}{courseType && <span className="fc-event-type"> ({courseType})</span>}
+          </div>
           {location && <div className="fc-event-location">{location}</div>}
         </div>
       </div>

@@ -23,13 +23,16 @@ export function TimetableControls({
   const years = Array.from({ length: Number(programme?.year || 0) }, (_, index) => String(index + 1));
 
   return (
-    <div className="d-flex flex-wrap align-items-center gap-2">
-      <div className="d-flex align-items-center gap-1">
-        <label className="small text-muted" htmlFor={`programme-${timetableId}`}>Programme:</label>
+    <div
+      className="d-flex flex-wrap align-items-center gap-2"
+      style={{ flex: '1 1 14rem', minWidth: 0, maxWidth: '100%' }}
+    >
+      <div className="d-flex align-items-center gap-1" style={{ flex: '1 1 14rem', minWidth: 0 }}>
+        <label className="small text-muted flex-shrink-0" htmlFor={`programme-${timetableId}`}>Programme:</label>
         <select
           id={`programme-${timetableId}`}
           className="form-select form-select-sm"
-          style={{ minWidth: '200px', width: 'auto' }}
+          style={{ flex: '1 1 0', minWidth: 0, width: 'auto' }}
           aria-label={`${timetableLabel} programme`}
           value={currentProgrammeId}
           onChange={event => onProgrammeChange(event.target.value)}
