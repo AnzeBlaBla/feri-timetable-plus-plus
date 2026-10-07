@@ -1,178 +1,66 @@
 import { NextRequest } from 'next/server';
+import { getProgrammes } from '@/lib/timetable-server';
+import { fetchTimetableData, filterLecturesByGroups, parseGroupsParam } from '@/lib/timetable-utils';
 import {
-  fetchTimetableData,
-  buildCourseGroupMapping,
-  parseGroupsParam,
-  filterLecturesByGroups,
-} from '@/lib/timetable-utils';
-import { LectureWise } from '@/types/types';
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  
-  // Check if date is valid
-  if (isNaN(date.getTime())) {
-    console.error('Invalid date:', dateStr);
-    return '';
-  }
-  
-  // Format as UTC with Z suffix
-  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-}
-
-function escapeICSText(text: string): string {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,')
-    .replace(/\n/g, '\\n');
-}
-
-function generateICS(lectures: LectureWise[], programmeId: string, year: string): string {
-  console.log(`Starting ICS generation with ${lectures.length} lectures`);
-  
-  const lines: string[] = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//FERI Timetable++//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    `X-WR-CALNAME:FERI Timetable - ${programmeId} Year ${year}`,
-  ];
-
-
-  let validEvents = 0;
-  let skippedEvents = 0;
-
-  lectures.forEach((lecture, index) => {
-    // Create a truly unique UID by combining multiple identifiers
-    const uid = `${lecture.id}-${lecture.start_time}-${lecture.end_time}@feri-timetable-plus-plus`;
-    const dtstart = formatDate(lecture.start_time);
-    const dtend = formatDate(lecture.end_time);
-    
-    // Skip if date formatting failed
-    if (!dtstart || !dtend) {
-      console.error(`Skipping lecture ${index} due to invalid dates:`, lecture.start_time, lecture.end_time);
-      skippedEvents++;
-      return;
-    }
-        
-    // Handle empty course names - show as placeholder like in web app
-    const courseName = (lecture.course || 'Empty').trim();
-    const executionType = (lecture.executionType || '').trim();
-    
-    // Ensure summary is never empty
-    const summary = escapeICSText(
-      executionType && executionType !== '' 
-        ? `${courseName} - ${executionType}` 
-        : courseName
-    );
-    
-    const groups = lecture.groups?.map(g => g.name).filter(Boolean).join(', ') || '';
-    const lecturers = lecture.lecturers?.map(l => l.name).filter(Boolean).join(', ') || '';
-    const rooms = lecture.rooms?.map(r => r.name).filter(Boolean).join(', ') || '';
-    
-    const descriptionParts = [
-      groups && `Groups: ${groups}`,
-      lecturers && `Lecturers: ${lecturers}`,
-      rooms && `Rooms: ${rooms}`,
-    ].filter(Boolean);
-    
-    const description = escapeICSText(descriptionParts.join('\\n'));
-    const location = escapeICSText(rooms);
-    
-    // Validate that we have required fields
-    if (!summary || summary.trim() === '') {
-      console.warn(`Skipping event ${index} - empty summary`);
-      skippedEvents++;
-      return;
-    }
-
-    // Format DTSTAMP as UTC
-    const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    
-    // Build event lines, filtering out empty optional fields
-    const eventLines = [
-      'BEGIN:VEVENT',
-      `UID:${uid}`,
-      `DTSTAMP:${dtstamp}`,
-      `DTSTART:${dtstart}`,
-      `DTEND:${dtend}`,
-      `SUMMARY:${summary}`,
-    ];
-    
-    // Add optional fields only if they have content
-    if (description && description.trim() !== '') {
-      eventLines.push(`DESCRIPTION:${description}`);
-    }
-    if (location && location.trim() !== '') {
-      eventLines.push(`LOCATION:${location}`);
-    }
-    
-    eventLines.push(
-      'STATUS:CONFIRMED',
-      'SEQUENCE:0',
-      'END:VEVENT'
-    );
-
-    // Add all event lines to the main lines array
-    lines.push(...eventLines);
-    validEvents++;
-  });
-
-  console.log(`ICS generation complete: ${validEvents} valid events, ${skippedEvents} skipped events`);
-  
-  lines.push('END:VCALENDAR');
-  
-  const icsContent = lines.filter(Boolean).join('\r\n');
-  console.log(`Generated ICS file with ${icsContent.split('BEGIN:VEVENT').length - 1} events`);
-  
-  return icsContent;
-}
+  parseTimetablesParam,
+  TIMETABLE_COLORS,
+  timetableDisplayName,
+  validateTimetableSelections,
+} from '@/lib/timetable-selection';
+import { generateICS } from '@/lib/timetable-ics';
+import { TimetableSelection } from '@/types/timetable';
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const programme = searchParams.get('programme');
-  const year = searchParams.get('year');
-  const branches = searchParams.get('branches') || 'all';
-  const groupsParam = searchParams.get('groups');
-
-  if (!programme || !year) {
-    return new Response('Programme and year are required', { status: 400 });
-  }
-
+  const params = request.nextUrl.searchParams;
+  let selections: TimetableSelection[];
   try {
-    // Fetch timetable data
-    const { allGroups, lectures } = await fetchTimetableData(programme, year, branches);
-
-    // Build course-group mapping
-    const courseGroups = buildCourseGroupMapping(lectures, allGroups);
-
-    // Parse selected groups
-    const selectedGroups = groupsParam ? parseGroupsParam(groupsParam) : {};
-
-    // Filter lectures
-    const filteredLectures = filterLecturesByGroups(lectures, selectedGroups);
-
-    // Sort lectures by start date
-    const sortedLectures = filteredLectures.sort((a, b) => {
-      const dateA = new Date(a.start_time);
-      const dateB = new Date(b.start_time);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    // Generate ICS content
-    const icsContent = generateICS(sortedLectures, programme, year);
-
-    // Return ICS file
+    if (params.has('timetables')) {
+      selections = parseTimetablesParam(params.get('timetables')!);
+    } else {
+      const programmeId = params.get('programme');
+      const year = params.get('year');
+      if (!programmeId || !year) return new Response('Programme and year are required', { status: 400 });
+      selections = [{
+        id: 'main',
+        programmeId,
+        year,
+        branches: params.get('branches') || 'all',
+        selectedGroups: params.has('groups') ? parseGroupsParam(params.get('groups')!) : {},
+        label: '',
+        color: TIMETABLE_COLORS[0],
+      }];
+    }
+  } catch (error) {
+    return new Response(error instanceof Error ? error.message : 'Invalid timetable selection', { status: 400 });
+  }
+  try {
+    const programmes = await getProgrammes();
+    try {
+      validateTimetableSelections(selections, programmes);
+    } catch (error) {
+      return new Response(error instanceof Error ? error.message : 'Invalid programme or year', { status: 400 });
+    }
+    const timetables = await Promise.all(selections.map(async selection => {
+      const { lectures } = await fetchTimetableData(selection.programmeId, selection.year, selection.branches);
+      return {
+        selection,
+        label: timetableDisplayName(selection, programmes),
+        lectures: filterLecturesByGroups(lectures, selection.selectedGroups).sort((a, b) =>
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+        ),
+      };
+    }));
+    const icsContent = generateICS(timetables);
     return new Response(icsContent, {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': `attachment; filename="timetable-${programme}-${year}.ics"`,
+        'Content-Disposition': `${params.get('download') === '1' ? 'attachment' : 'inline'}; filename="feri-timetables.ics"`,
+        'Cache-Control': 'no-cache, max-age=0, must-revalidate',
       },
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to generate calendar file';
     console.error('Error generating ICS:', error);
-    return new Response('Failed to generate calendar file', { status: 500 });
+    return new Response(message, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }

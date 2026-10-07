@@ -11,6 +11,7 @@ interface GroupSelectionModalProps {
   programmeId: string;
   year: string;
   branches: string;
+  timetableLabel?: string;
 }
 
 export function GroupSelectionModal({
@@ -18,6 +19,7 @@ export function GroupSelectionModal({
   courseGroups,
   selectedGroups,
   onGroupsChange,
+  timetableLabel = '',
 }: GroupSelectionModalProps) {
   const [localSelectedGroups, setLocalSelectedGroups] = useState<SelectedGroups>(selectedGroups);
 
@@ -65,7 +67,7 @@ export function GroupSelectionModal({
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title" id="groupsModalLabel">
-              <i className="bi bi-pencil me-2"></i>Edit Groups - FERI Timetable++
+              <i className="bi bi-pencil me-2"></i>Edit Groups{timetableLabel ? ` - ${timetableLabel}` : ''} - FERI Timetable++
             </h5>
             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>

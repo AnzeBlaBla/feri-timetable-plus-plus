@@ -65,7 +65,8 @@ export function buildCourseGroupMapping(
   const allowedGroupNames = new Set(allowedGroups.map(g => g.name));
   
   lectures.forEach(lecture => {
-    const courseName = lecture.course;
+    const courseName = lecture.course?.trim();
+    // Notes/breaks follow subject groups; they are not separate subjects.
     if (!courseName) return;
     
     if (!courseGroups[courseName]) {
@@ -139,9 +140,20 @@ export function filterLecturesByGroups(
   if (Object.keys(selectedGroups).length === 0) {
     return lectures;
   }
+
+  const selectedSubjectGroups = new Set<string>();
+  for (const lecture of lectures) {
+    const course = lecture.course?.trim();
+    if (!course) continue;
+    const groups = selectedGroups[course] ?? lecture.groups?.map(group => group.name) ?? [];
+    groups.forEach(group => selectedSubjectGroups.add(group));
+  }
   
   return lectures.filter(lecture => {
-    const courseName = lecture.course;
+    const courseName = lecture.course?.trim();
+    if (!courseName) {
+      return lecture.groups?.some(group => selectedSubjectGroups.has(group.name));
+    }
     const courseSelectedGroups = selectedGroups[courseName];
     
     // If this course is not in the selection object, include all its lectures
@@ -205,11 +217,12 @@ export function convertLecturesToEvents(lectures: LectureWise[]): CalendarEvent[
     const roomNames = lecture.rooms?.map(r => r.name).join(', ') || '';
     
     // Generate consistent color based on course name
-    const backgroundColor = stringToColor(lecture.course);
+    const courseName = lecture.course?.trim() || lecture.note?.trim() || 'Event';
+    const backgroundColor = stringToColor(courseName);
     const textColor = needsLightText(backgroundColor) ? '#ffffff' : '#000000';
     
     // Build title without location (location will be shown as subtitle)
-    const title = lecture.course;
+    const title = courseName;
     
     // Create unique ID by combining lecture ID with group and room info
     // This ensures that different groups/rooms at the same time get different IDs
@@ -224,7 +237,7 @@ export function convertLecturesToEvents(lectures: LectureWise[]): CalendarEvent[
       borderColor: backgroundColor,
       textColor,
       extendedProps: {
-        course: lecture.course,
+        course: courseName,
         type: lecture.executionType,
         group: groupNames,
         persons: lecturerNames || undefined,

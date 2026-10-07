@@ -1,15 +1,17 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarEvent } from '@/types/timetable';
+import { getCommonFreeSlots } from '@/lib/timetable-selection';
 
 interface TimetableCalendarProps {
   events: CalendarEvent[];
+  showCommonFreeTime?: boolean;
 }
 
 declare global {
@@ -18,27 +20,32 @@ declare global {
   }
 }
 
-export function TimetableCalendar({ events }: TimetableCalendarProps) {
+export function TimetableCalendar({ events, showCommonFreeTime = false }: TimetableCalendarProps) {
   const calendarRef = useRef<any>(null);
   const renderCountRef = useRef<number>(0);
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date; viewType: string } | null>(null);
+  const freeSlots = showCommonFreeTime && dateRange?.viewType.startsWith('timeGrid')
+    ? getCommonFreeSlots(events, dateRange.start, dateRange.end).map((slot, index) => ({
+      ...slot, id: `common-free-${index}`, title: 'Free time', display: 'background',
+      classNames: ['timetable-free-slot'], backgroundColor: 'rgba(var(--bs-info-rgb, 13, 202, 240), 0.16)',
+      extendedProps: { isCommonFreeSlot: true },
+    })) : [];
 
-  // Helper function to get shorthand name (first letter of each word)
-  const getShorthandName = (courseName: string): string => {
-    const ignoreWords = ['in', 'iz', 'na', 'za', 'v', 'z', 'a', 'an', 'the', 'of', 'to', 'for', 'with', 'and', 'or'];
-    
-    return courseName
-      .split(' ')
-      .filter(word => word.length > 0) // Filter out empty strings
-      .filter(word => !ignoreWords.includes(word.toLowerCase())) // Filter out ignored words
-      .map(word => word.charAt(0).toUpperCase())
-      .join('');
-  };
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (showCommonFreeTime && api && !api.view.type.startsWith('timeGrid')) {
+      api.changeView(window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek');
+    }
+  }, [showCommonFreeTime]);
 
-  // Check if device is mobile
-  const isMobile = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 768;
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
   };
+  const escapeHTML = (value: string): string => value.replace(/[&<>"']/g, character => htmlEntities[character]);
 
   // Debug: Log events when they change
   useEffect(() => {
@@ -95,49 +102,60 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
   const handleEventClick = (info: any) => {
     const event = info.event;
     const props = event.extendedProps;
+    if (props.isCommonFreeSlot) return;
+    const owners = props.timetables || (props.timetableLabel ? [{ label: props.timetableLabel, color: event.backgroundColor }] : []);
+    const timetableRow = owners.length ? `
+      <div class="row mb-2">
+        <div class="col-sm-4"><strong>${owners.length > 1 ? 'Timetables' : 'Timetable'}:</strong></div>
+        <div class="col-sm-8">${owners.map((owner: { label: string; color: string }) => `
+          <div><span class="timetable-owner-dot" style="background-color: ${escapeHTML(owner.color)};"></span>${escapeHTML(owner.label)}</div>
+        `).join('')}</div>
+      </div>
+    ` : '';
 
     const modalContent = `
       <div class="modal fade" id="eventModal" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
-            <div class="modal-header" style="background-color: ${event.backgroundColor}; color: ${event.textColor};">
-              <h5 class="modal-title">${event.title}</h5>
+            <div class="modal-header" style="background-color: ${escapeHTML(event.backgroundColor || '')}; color: ${escapeHTML(event.textColor || '')};">
+              <h5 class="modal-title">${escapeHTML(event.title || '')}</h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
               <div class="row mb-2">
                 <div class="col-sm-4"><strong>Course:</strong></div>
-                <div class="col-sm-8">${props.course}</div>
+                <div class="col-sm-8">${escapeHTML(props.course || '')}</div>
               </div>
               <div class="row mb-2">
                 <div class="col-sm-4"><strong>Type:</strong></div>
-                <div class="col-sm-8">${props.type}</div>
+                <div class="col-sm-8">${escapeHTML(props.type || '')}</div>
               </div>
+              ${timetableRow}
               ${props.group ? `
                 <div class="row mb-2">
                   <div class="col-sm-4"><strong>Group:</strong></div>
-                  <div class="col-sm-8">${props.group}</div>
+                  <div class="col-sm-8">${escapeHTML(props.group)}</div>
                 </div>
               ` : ''}
               ${props.persons ? `
                 <div class="row mb-2">
                   <div class="col-sm-4"><strong>Lecturer:</strong></div>
-                  <div class="col-sm-8">${props.persons}</div>
+                  <div class="col-sm-8">${escapeHTML(props.persons)}</div>
                 </div>
               ` : ''}
               ${props.location ? `
                 <div class="row mb-2">
                   <div class="col-sm-4"><strong>Location:</strong></div>
-                  <div class="col-sm-8">${props.location}</div>
+                  <div class="col-sm-8">${escapeHTML(props.location)}</div>
                 </div>
               ` : ''}
               <div class="row mb-2">
                 <div class="col-sm-4"><strong>Start:</strong></div>
-                <div class="col-sm-8">${event.start.toLocaleString()}</div>
+                <div class="col-sm-8">${escapeHTML(event.start?.toLocaleString() || '')}</div>
               </div>
               <div class="row mb-2">
                 <div class="col-sm-4"><strong>End:</strong></div>
-                <div class="col-sm-8">${event.end.toLocaleString()}</div>
+                <div class="col-sm-8">${escapeHTML(event.end?.toLocaleString() || '')}</div>
               </div>
             </div>
             <div class="modal-footer">
@@ -167,6 +185,9 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
   };
 
   const handleDatesSet = (dateInfo: any) => {
+    setDateRange(current => current?.start.getTime() === dateInfo.start.getTime()
+      && current?.end.getTime() === dateInfo.end.getTime() && current?.viewType === dateInfo.view.type
+      ? current : { start: dateInfo.start, end: dateInfo.end, viewType: dateInfo.view.type });
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi && (calendarApi as any).isInitialized) {
       saveViewPreference(dateInfo.view.type);
@@ -218,30 +239,29 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
   };
 
   const renderEventContent = (eventInfo: any) => {
+    if (eventInfo.event.extendedProps.isCommonFreeSlot) return <span>Free time</span>;
     const location = eventInfo.event.extendedProps.location;
     const courseName = eventInfo.event.title;
     const courseType = eventInfo.event.extendedProps.type;
-    const mobile = isMobile();
-    
-    // Build display name dynamically
-    let displayName: string;
-    if (mobile) {
-      // Mobile: Use shorthand + type in parentheses
-      const shorthand = getShorthandName(courseName);
-      displayName = courseType ? `${shorthand} (${courseType})` : shorthand;
-    } else {
-      // Desktop: Use full name + type in parentheses
-      displayName = courseType ? `${courseName} (${courseType})` : courseName;
-    }
-    
+    const owners = eventInfo.event.extendedProps.timetables || [];
     // Full name for tooltip (always with type if available)
     const fullName = courseType ? `${courseName} (${courseType})` : courseName;
     
     return (
-      <div className="fc-event-main-frame">
+      <div className={`fc-event-main-frame${owners.length > 1 ? ' fc-event-shared' : ''}`}>
+        {owners.length > 1 && <div
+          className="fc-event-owner-stripes"
+          role="img"
+          aria-label={owners.map((owner: { label: string }) => owner.label).join(', ')}
+          title={owners.map((owner: { label: string }) => owner.label).join(', ')}
+          style={{ backgroundImage: `linear-gradient(to bottom, ${owners.map((owner: { color: string }, index: number) =>
+            `${owner.color} ${index * 100 / owners.length}% ${(index + 1) * 100 / owners.length}%`).join(', ')})` }}
+        />}
         <div className="fc-event-time">{eventInfo.timeText}</div>
         <div className="fc-event-title-container">
-          <div className="fc-event-title" title={fullName}>{displayName}</div>
+          <div className="fc-event-title" title={fullName} aria-label={fullName}>
+            {courseName}{courseType && <span className="fc-event-type"> ({courseType})</span>}
+          </div>
           {location && <div className="fc-event-location">{location}</div>}
         </div>
       </div>
@@ -316,7 +336,8 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
         endTime: '20:00',
       }} */
       weekends={false}
-      events={events}
+      events={[...events, ...freeSlots]}
+      slotEventOverlap={false}
       eventDisplay="block"
       displayEventTime={true}
       eventContent={renderEventContent}
@@ -328,4 +349,3 @@ export function TimetableCalendar({ events }: TimetableCalendarProps) {
     />
   );
 }
-
