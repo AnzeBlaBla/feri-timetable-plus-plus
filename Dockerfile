@@ -22,16 +22,8 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN set -eu; \
-    cp .env /tmp/wtt-build.env; \
-    rm .env; \
-    if node --env-file=/tmp/wtt-build.env ./node_modules/next/dist/bin/next build; then \
-      build_status=0; \
-    else \
-      build_status=$?; \
-    fi; \
-    mv /tmp/wtt-build.env .env; \
-    exit "$build_status"
+RUN mv .env /tmp/wtt-build.env && \
+    node --env-file=/tmp/wtt-build.env ./node_modules/next/dist/bin/next build
 
 # Production image, copy all the files and run next
 FROM base AS runner

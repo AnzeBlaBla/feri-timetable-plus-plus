@@ -153,10 +153,6 @@ export function McpConnectionModal({
                   </button>
                 </div>
 
-                <div className="alert alert-warning small mt-3 mb-0" role="alert">
-                  Anyone with this URL can view the timetable selection it
-                  contains. Share it only with clients and people you trust.
-                </div>
                 {copyMessage && (
                   <div className="alert alert-info small mt-3 mb-0" role="status">
                     {copyMessage}
